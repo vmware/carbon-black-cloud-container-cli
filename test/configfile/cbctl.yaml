@@ -1,0 +1,7 @@
+active_user_profile: cbctl_default
+cbctl_default:
+  cb_api_id: 1234
+  cb_api_key: 5678
+  default_build_step: 4321
+  org_key: EWRTY2PK
+  saas_url: http://www.123.com
