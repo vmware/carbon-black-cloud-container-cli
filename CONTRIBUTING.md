@@ -8,7 +8,7 @@ as an open-source patch.
 
 ## Get Started
 
-Follow the guide in [README.md](README.md)
+Follow the guide in [README.md](README.md).
 
 ## Contribution Flow
 
@@ -68,6 +68,14 @@ notification when you git push.
 
 ### Code Style
 
+Before raising a Pull Request (PR), please run following commands to ensure your changes are not breaking the library, 
+and they are already linted:
+
+1. `go test ./...`
+2. `golang-ci lint`
+3. Run the build command in [README.md](README.md) to check your codes can be built (don't include the binary in your 
+commit).
+
 ### Formatting Commit Messages
 
 We follow the conventions on [How to Write a Git Commit Message](http://chris.beams.io/posts/git-commit/).
@@ -75,6 +83,8 @@ We follow the conventions on [How to Write a Git Commit Message](http://chris.be
 Be sure to include any related GitHub issue references in the commit message.  See
 [GFM syntax](https://guides.github.com/features/mastering-markdown/#GitHub-flavored-markdown) for referencing issues
 and commits.
+
+Once a PR is ready to merge, squash any fix review feedback, typo and merged sorts of commits.
 
 ## Reporting Bugs and Creating Issues
 
