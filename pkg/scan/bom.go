@@ -88,7 +88,7 @@ func (h *RegistryHandler) Generate(originalInput string, opts Option) (*Bom, err
 
 	// error happened in this block will be ignored, since if we failed to copy without docker daemon,
 	// we will pass the input to Syft and let Syft pull image by docker daemon
-	if !opts.UseDockerDaemon && inputSrc == image.DockerDaemonSource {
+	if !opts.UseDockerDaemon {
 		if tempDir, creationErr := createTempDir(); creationErr == nil {
 			defer func() {
 				if rmErr := os.RemoveAll(tempDir); rmErr != nil {
