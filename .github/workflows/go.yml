@@ -24,7 +24,7 @@ jobs:
       uses: golangci/golangci-lint-action@v2
       with:
         version: v1.41
-        args: --build-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs"
+        args: --build-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs" --timeout 5m
 
     - name: go test
       run: make test
