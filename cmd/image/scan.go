@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package image
 
 import (
@@ -13,15 +8,15 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/printtool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/scan"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/printtool"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/image"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
+	"gitlab.bit9.local/octarine/cbctl/pkg/scan"
 )
 
 var scanHandler *scan.Handler
@@ -55,6 +50,12 @@ Supports the following image sources:
 			terminalui.NewDisplay().DisplayEvents()
 		},
 	}
+
+	scanCmd.PersistentFlags().BoolVar(
+		&opts.ForceScan, "force", false, "trigger a force scan no matter the image is scanned or not")
+	scanCmd.PersistentFlags().IntVar(
+		&opts.Limit, "limit", fullTable, // set to 0 will show all rows
+		"number of rows to show in the report (for table format only)")
 
 	return scanCmd
 }

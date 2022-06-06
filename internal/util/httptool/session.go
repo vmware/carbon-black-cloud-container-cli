@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package httptool
 
 import (
@@ -14,7 +9,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
 )
 
 // CarbonBlackAccessInfo contains the api id and api key for Carbon Black.

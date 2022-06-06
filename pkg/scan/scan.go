@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package scan
 
 import (
@@ -17,13 +12,13 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/version"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
 	"github.com/wagoodman/go-progress"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
+	"gitlab.bit9.local/octarine/cbctl/internal/version"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/bom"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/image"
 )
 
 const (
@@ -157,6 +152,7 @@ func (h *Handler) Scan(opts Option) (*image.ScannedImage, error) {
 				currentStage = "fetching result"
 				logrus.Infof("Scanning image, current stage: %v", currentStage)
 				stage.Current = currentStage
+				scannedImage.Packages = h.bom.Packages
 				scannedImageChan <- scannedImage
 
 				return

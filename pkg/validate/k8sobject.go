@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package validate
 
 import (
@@ -19,8 +14,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/resource"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/resource"
 	"sigs.k8s.io/yaml"
 )
 

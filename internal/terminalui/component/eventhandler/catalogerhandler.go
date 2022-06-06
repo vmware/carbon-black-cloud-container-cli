@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package eventhandler
 
 import (
@@ -10,9 +5,9 @@ import (
 
 	"github.com/anchore/syft/syft/pkg/cataloger"
 	"github.com/gookit/color"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/frame"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/spinner"
 	"github.com/wagoodman/go-progress"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/frame"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/spinner"
 )
 
 // CatalogerStartedHandler periodically writes catalog statistics to a single line.

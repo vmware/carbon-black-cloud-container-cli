@@ -23,8 +23,8 @@ linters:
     - gofumpt
     - goheader
     - goimports
-    # - golint
-    # - gomnd
+    - golint
+    - gomnd
     - gomodguard
     - goprintffuncname
     # - gosec
@@ -39,9 +39,8 @@ linters:
     - noctx
     - nolintlint
     - prealloc
-    - revive
     - rowserrcheck
-    # - scopelint
+    - scopelint
     - sqlclosecheck
     - staticcheck
     - structcheck
@@ -69,7 +68,7 @@ linters-settings:
           - return
   funlen:
     lines: 150
-    statements: 50
+    statements: 60
 
 issues:
   # Independently from option `exclude` we use default exclude patterns,

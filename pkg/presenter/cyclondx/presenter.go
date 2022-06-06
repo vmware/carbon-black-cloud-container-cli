@@ -1,12 +1,13 @@
-// Package json provides utilities for showing results in json format
-package json
+// Package cyclondx provides utilities for showing results in cyclondx format
+package cyclondx
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/xml"
 	"io"
 )
 
-// Presenter will show the analyze result in json format.
+// Presenter will show the analyzed result in json format.
 type Presenter struct {
 	provider Provider
 }
@@ -30,10 +31,14 @@ func (p Presenter) Footer() string {
 
 // Present will convert the result into json format and pass to io.Writer.
 func (p Presenter) Present(output io.Writer) error {
-	enc := json.NewEncoder(output)
-	// prevent > and < from being escaped in the payload
-	enc.SetEscapeHTML(false)
-	enc.SetIndent("", " ")
+	doc := p.provider.CycloneDXDoc()
+	encoder := xml.NewEncoder(output)
+	r := bytes.NewReader(doc)
 
-	return enc.Encode(p.provider.(Provider))
+	_, err := r.WriteTo(output)
+	if err != nil {
+		return encoder.Encode(doc)
+	}
+
+	return encoder.Encode(output)
 }

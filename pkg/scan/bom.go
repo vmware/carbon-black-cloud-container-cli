@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package scan
 
 import (
@@ -18,6 +13,7 @@ import (
 	"github.com/anchore/stereoscope"
 	"github.com/anchore/stereoscope/pkg/image"
 	"github.com/anchore/syft/syft"
+	"github.com/anchore/syft/syft/pkg/cataloger"
 	"github.com/anchore/syft/syft/source"
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker/reference"
@@ -25,12 +21,18 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
 	"github.com/wagoodman/go-partybus"
 	"github.com/wagoodman/go-progress"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/bom"
+)
+
+const (
+	digestToTag   = ":sha256_"
+	digestStart   = "@sha256:"
+	tarFileEnding = ".tar"
 )
 
 // Bom contains the full bill of materials for an image, along with some
@@ -88,7 +90,7 @@ func (h *RegistryHandler) Generate(originalInput string, opts Option) (*Bom, err
 
 	// error happened in this block will be ignored, since if we failed to copy without docker daemon,
 	// we will pass the input to Syft and let Syft pull image by docker daemon
-	if !opts.UseDockerDaemon {
+	if opts.BypassDockerDaemon {
 		if tempDir, creationErr := createTempDir(); creationErr == nil {
 			defer func() {
 				if rmErr := os.RemoveAll(tempDir); rmErr != nil {
@@ -98,6 +100,9 @@ func (h *RegistryHandler) Generate(originalInput string, opts Option) (*Bom, err
 
 			// replace the input with image we copied
 			if cachedImageDir, e := h.copyImage(originalInput, tempDir, opts); e == nil {
+				logrus.WithFields(logrus.Fields{"original-input": originalInput, "new-input": cachedImageDir}).
+					Info("replace origin input after copy with cached image path")
+
 				input = cachedImageDir
 			}
 		}
@@ -110,9 +115,17 @@ func (h *RegistryHandler) Generate(originalInput string, opts Option) (*Bom, err
 		return nil, e
 	}
 
-	theSource, cleanup, err := source.New(input, &image.RegistryOptions{})
+	return GenerateSBOMFromInput(input, originalInput, opts.FullTag)
+}
+
+// GenerateSBOMFromInput create bom struct after coping.
+func GenerateSBOMFromInput(input, originalInput, forceFullTag string) (*Bom, error) {
+	var exclusions []string
+
+	theSource, cleanup, err := source.New(input, &image.RegistryOptions{}, exclusions)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to generate source from input %v", originalInput)
+		errMsg := fmt.Sprintf("Failed to generate source from input %v", input)
+
 		e := cberr.NewError(cberr.SBOMGenerationErr, errMsg, err)
 		logrus.Errorln(e.Error())
 
@@ -122,28 +135,56 @@ func (h *RegistryHandler) Generate(originalInput string, opts Option) (*Bom, err
 	// clean up sterescope tmp files if needed
 	defer cleanup()
 
-	theCatalog, theDistro, err := syft.CatalogPackages(theSource, source.SquashedScope)
+	cft := cataloger.DefaultConfig()
+
+	theCatalog, _, linuxDistro, err := syft.CatalogPackages(theSource, cft)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to catalog input %v", originalInput)
+		errMsg := fmt.Sprintf("Failed to catalog input %v", input)
+
 		e := cberr.NewError(cberr.SBOMGenerationErr, errMsg, err)
 		logrus.Errorln(e.Error())
 
 		return nil, e
 	}
 
-	doc, err := bom.NewJSONDocument(theCatalog, theSource.Metadata, theDistro, source.SquashedScope)
+	doc, err := bom.NewJSONDocument(theCatalog, theSource.Metadata, linuxDistro, source.SquashedScope)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to parse the sbom for %v", originalInput)
+		errMsg := fmt.Sprintf("Failed to parse the sbom for %v", input)
 		e := cberr.NewError(cberr.SBOMGenerationErr, errMsg, err)
 		logrus.Errorln(e.Error())
 
 		return nil, e
 	}
 
-	// attach tag to bom if not exists, use original input here for getting tag
-	fullTag := attachTag(&doc, originalInput, opts)
+	// fullTag is a tag that use for image-scanning-pipeline (checking ShouldIgnore/ForceScan and updating scan status).
+	// target.Tags is sent to anchore and will determine which tags the webhook will update.
+	var fullTag string
 
-	logrus.Infof("SBOM generated successfully with full tag: %v", fullTag)
+	target, ok := doc.Source.Target.(bom.JSONImageSource)
+	if !ok {
+		return nil, fmt.Errorf("failed to convert taget to image metadata type")
+	}
+
+	target.Tags = formatTags(target.Tags, forceFullTag)
+	if len(target.Tags) > 0 {
+		logrus.WithField("tags", target.Tags).Debug("Valid tags detected from sbom")
+		// pick last so if there is force tag it will be used
+		fullTag = revertAnchoreDigestChange(target.Tags[len(target.Tags)-1])
+	} else {
+		// attach tag to bom because not exists.
+		fullTag = generateFullTagFromOriginInput(originalInput, target.ManifestDigest)
+		generateTag, formattingErr := formatTag(fullTag)
+		if formattingErr != nil {
+			logrus.WithFields(logrus.Fields{"err": formattingErr, "originalInput": originalInput}).
+				Error("fail formatting originalInput into tag")
+			return nil, formattingErr
+		}
+		target.Tags = []string{generateTag}
+	}
+
+	doc.Source.Target = target
+
+	logrus.WithField("fullTag", fullTag).Infof("SBOM generated successfully")
 
 	return &Bom{
 		FullTag:        fullTag,
@@ -249,62 +290,68 @@ func (h *RegistryHandler) copyImage(input, cacheDir string, opts Option) (string
 	return destDir, nil
 }
 
-// attachTag will attach a tag for those results without a tag. Return will be the normalized full-tag.
-func attachTag(doc *bom.JSONDocument, input string, opts Option) (returnTag string) {
-	target, ok := doc.Source.Target.(bom.JSONImageSource)
-	if !ok {
-		logrus.Errorf("Failed to convert taget to image metadata type")
-		return input
+func addDefaultValuesToFullTag(tag string) (string, error) {
+	ref, err := reference.ParseDockerRef(tag)
+	if err != nil {
+		return tag, err
 	}
 
-	if opts.FullTag != "" {
-		target.Tags = append([]string{opts.FullTag}, target.Tags...)
-		doc.Source.Target = target
+	return ref.String(), err
+}
+
+// formatTag try to format the tags that Syft stores at SBOM.
+// adding default tag plus repo to tags or editing digested tag.
+// anchore cant handle tags with @ (they need all images to be tag and not digested).
+func formatTag(tag string) (string, error) {
+	if strings.Contains(tag, digestStart) {
+		tag = strings.ReplaceAll(tag, digestStart, digestToTag)
 	}
 
-	generatedTag := input
+	return addDefaultValuesToFullTag(tag)
+}
 
-	if len(target.Tags) > 0 {
-		logrus.Infof("Valid tags detected from sbom: %+v", target.Tags)
+// formatTags format the attach tags and add opts fullTag if exists.
+func formatTags(tags []string, forceFullTag string) []string {
+	if forceFullTag != "" {
+		// the FullTag need to be last
+		tags = append(tags, forceFullTag)
+	}
 
-		// if the tag can be normalized, we will use it as the tag
-		if ref, err := reference.ParseNormalizedNamed(target.Tags[0]); err == nil {
-			fullTag := reference.TagNameOnly(ref).String()
-			target.Tags[0] = fullTag
-			doc.Source.Target = target
+	formattedTags := make([]string, 0, len(tags))
 
-			return fullTag
+	for _, tag := range tags {
+		formattedTag, err := formatTag(tag)
+		if err != nil {
+			logrus.WithFields(logrus.Fields{"err": err, "tag": tag}).
+				Warning("fail formatting tag (remove from tags)")
+			continue
 		}
 
-		generatedTag = target.Tags[0]
+		formattedTags = append(formattedTags, formattedTag)
 	}
 
-	switch {
+	return formattedTags
+}
+
+// revertAnchoreDigestChange revert any change made to digest in order to create image scanning pipeline fullTag.
+func revertAnchoreDigestChange(anchorNormalizedTag string) string {
+	return strings.ReplaceAll(anchorNormalizedTag, digestToTag, digestStart)
+}
+
+func generateFullTagFromOriginInput(tag string, manifestDigest string) string {
 	// since we already generated sbom with this input with sha256, the input can be guaranteed as
 	// an image with valid sha256 digest, no need to further checking here
-	case strings.Contains(input, "@sha256:"):
-		if ref, err := reference.ParseDockerRef(input); err == nil {
-			generatedTag = strings.ReplaceAll(ref.String(), "@sha256:", ":sha256_")
-			returnTag = ref.String()
-		}
-	case strings.Contains(input, ".tar"):
-		repo := strings.TrimSuffix(input[strings.LastIndex(input, "/")+1:], ".tar")
-		tag := strings.ReplaceAll(target.ManifestDigest, "sha256:", "")
-		generatedTag = fmt.Sprintf("%s:%s", repo, tag)
-	default:
-		if ref, err := reference.ParseNormalizedNamed(generatedTag); err == nil {
-			generatedTag = reference.TagNameOnly(ref).String()
-		}
+	if strings.Contains(tag, tarFileEnding) {
+		repo := strings.TrimSuffix(tag[strings.LastIndex(tag, "/")+1:], tarFileEnding)
+		newTag := strings.ReplaceAll(manifestDigest, "sha256:", "")
+		tag = fmt.Sprintf("%s:%s", repo, newTag)
 	}
 
-	target.Tags = []string{generatedTag}
-	doc.Source.Target = target
-
-	logrus.Infof("Created a fake tag for %v: %v", input, generatedTag)
-
-	if returnTag == "" {
-		returnTag = generatedTag
+	tag, err := addDefaultValuesToFullTag(tag)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{"err": err, "tag": tag}).
+			Warning("fail formatting tag while generating FullTag from origin input")
 	}
 
-	return returnTag
+	return tag
 }

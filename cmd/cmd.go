@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package cmd
 
 import (
@@ -14,16 +9,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/auth"
-	configcmd "github.com/vmware/carbon-black-cloud-container-cli/cmd/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/image"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/k8sobject"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/user"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/version"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/cmd/auth"
+	configcmd "gitlab.bit9.local/octarine/cbctl/cmd/config"
+	"gitlab.bit9.local/octarine/cbctl/cmd/image"
+	"gitlab.bit9.local/octarine/cbctl/cmd/k8sobject"
+	"gitlab.bit9.local/octarine/cbctl/cmd/user"
+	"gitlab.bit9.local/octarine/cbctl/cmd/version"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
 )
 
 var defaultConfigHome string
@@ -126,6 +121,11 @@ func setGlobalCliOptions() {
 	logDefaultName := fmt.Sprintf("%s/debug.log", defaultConfigHome)
 	rootCmd.PersistentFlags().String(flag, logDefaultName, "enable debug log")
 	rootCmd.Flag(flag).NoOptDefVal = logDefaultName
+
+	for flag, usage := range config.ConfigFileOverrides {
+		rootCmd.PersistentFlags().String(flag, "", usage)
+		_ = viper.BindPFlag(flag, rootCmd.PersistentFlags().Lookup(flag))
+	}
 }
 
 // findHomeDir will find the home directory follow XDG standards.

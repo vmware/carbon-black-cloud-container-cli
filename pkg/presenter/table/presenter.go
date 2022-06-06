@@ -1,15 +1,10 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package table provides utilities for showing results in table format
 package table
 
 import (
 	"io"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/tabletool"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/tabletool"
 )
 
 // Option is the option used for table presenter.

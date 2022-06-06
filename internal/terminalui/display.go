@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package terminalui provides interface for display handlers
 package terminalui
 
@@ -10,9 +5,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/dynamicui"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/plainui"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/dynamicui"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/plainui"
 	"golang.org/x/term"
 )
 

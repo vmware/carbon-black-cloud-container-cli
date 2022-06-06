@@ -1,15 +1,10 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package image manages the image analysis subcommands.
 package image
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/scan"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
+	"gitlab.bit9.local/octarine/cbctl/pkg/scan"
 )
 
 type (
@@ -22,6 +17,8 @@ var opts struct {
 	presenterOption
 }
 
+const fullTable = 0
+
 // Cmd return the command related to image analysis.
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -32,18 +29,17 @@ func Cmd() *cobra.Command {
 
 	cmd.AddCommand(ScanCmd())
 	cmd.AddCommand(ValidateCmd())
+	cmd.AddCommand(PackagesCmd())
 
 	cmd.PersistentFlags().StringVarP(
 		&opts.OutputFormat, "output", "o", "table", "output format of the result")
-	cmd.PersistentFlags().IntVar(
-		&opts.Limit, "limit", 10,
-		"number of rows to show in the report (for table format only; set to 0 will show all rows)")
 	cmd.PersistentFlags().BoolVar(
 		&opts.ShouldCleanup, "cleanup", false, "clean up image (for docker only) after scanning")
 	cmd.PersistentFlags().BoolVar(
-		&opts.ForceScan, "force", false, "trigger a force scan no matter the image is scanned or not")
+		&opts.BypassDockerDaemon, "bypass-docker-daemon", false,
+		"try to pull image without docker daemon")
 	cmd.PersistentFlags().BoolVar(
-		&opts.UseDockerDaemon, "use-docker", false, "use docker daemon to pull image")
+		&opts.UseDockerDaemon, "use-docker", false, "deprecated - docker daemon is now the default")
 	cmd.PersistentFlags().StringVar(
 		&opts.Credential, "cred", "", "use `USERNAME[:PASSWORD]` for accessing the registry")
 	cmd.PersistentFlags().IntVar(

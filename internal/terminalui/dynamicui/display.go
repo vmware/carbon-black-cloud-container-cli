@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package dynamicui provides display handler for dynamic progress bar in the terminal
 package dynamicui
 
@@ -14,11 +9,11 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/eventhandler"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/frame"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/eventhandler"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/frame"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
 )
 
 // Display will help us handle all the incoming events and show them on the terminal.
@@ -27,6 +22,32 @@ type Display struct{}
 // NewDisplay will initialize a display instance.
 func NewDisplay() *Display {
 	return &Display{}
+}
+
+// displayResults will display result on terminal.
+func displayResults(errorMsg string, fr *frame.Frame, wg *sync.WaitGroup, e bus.Event) error {
+	var displayErrLocal error
+
+	wg.Wait()
+
+	pres, ok := e.Value().(presenter.Presenter)
+	if !ok {
+		return fmt.Errorf("%v internal error", errorMsg)
+	}
+
+	fr.Append()
+	displayErrLocal = fr.Append().Render(color.Bold.Sprint(pres.Title()))
+	fr.Append()
+
+	if err := pres.Present(os.Stdout); err != nil {
+		displayErrLocal = fmt.Errorf("%v %v", errorMsg, err)
+	}
+
+	if pres.Footer() != "" {
+		displayErrLocal = fr.Append().Render(color.Bold.Sprint(pres.Footer()))
+	}
+
+	return displayErrLocal
 }
 
 // DisplayEvents will read events from channel, and show them on terminal.
@@ -88,20 +109,11 @@ eventLoop:
 		case bus.ScanStarted:
 			displayErr = handler.AnalyzeStartedHandler(fr.Append(), e.Value())
 		case bus.ScanFinished, bus.ValidateFinishedWithViolations:
-			wg.Wait()
-			pres := e.Value().(presenter.Presenter)
-
-			fr.Append()
-			displayErr = fr.Append().Render(color.Bold.Sprint(pres.Title()))
-			fr.Append()
-
-			if err := pres.Present(os.Stdout); err != nil {
-				displayErr = fmt.Errorf("failed to show vulnerability results: %v", err)
-			}
-
-			if pres.Footer() != "" {
-				displayErr = fr.Append().Render(color.Bold.Sprint(pres.Footer()))
-			}
+			errorMsg := "failed to show vulnerability results:"
+			displayErr = displayResults(errorMsg, fr, wg, e)
+		case bus.PrintSBOM:
+			errorMsg := "failed to show packages:"
+			displayErr = displayResults(errorMsg, fr, wg, e)
 		case bus.CatalogerFinished, bus.ReadLayer:
 			fallthrough
 		default:

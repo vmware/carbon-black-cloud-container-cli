@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package config
 
 import (
@@ -11,14 +6,30 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
 	"github.com/zalando/go-keyring"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
 )
 
-var appConfig *AppConfig
+var (
+	appConfig *AppConfig
 
-const authenticatedByKeyringMaskValue = "[authenticated by keyring]"
+	// ConfigFileOverrides contains the CLI flags that override the values in the config file.
+	//
+	// It is a map of flag key to usage.
+	ConfigFileOverrides = map[string]string{
+		"cb-api-id":  "the API ID to be used for authorization",
+		"cb-api-key": "the API Key to be used for authorization",
+		"org-key":    "the Org key of the organization in CBC",
+		"saas-url":   "the Base URL of the CBC backend",
+	}
+)
+
+const (
+	authenticatedByKeyringMaskValue = "[authenticated by keyring]"
+	cliFlagDelimeter                = "-"
+	configValueDelimeter            = "_"
+)
 
 // AppConfig is the config of the cli app.
 type AppConfig struct {
@@ -67,7 +78,7 @@ func LoadAppConfig() {
 
 	// Fetch env variable with application name prefix
 	viper.SetEnvPrefix(internal.ApplicationName)
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 
 	if appConfig.CliOpt.ConfigFile != "" {
 		// use config file from the flag.
@@ -226,6 +237,21 @@ func setUserProfiles() {
 
 		if _, option := Contains(optionName); option >= 0 {
 			SetConfigByOption(user, option, value)
+		}
+	}
+
+	// go over the options which we allow to be overridden via CLI args
+	// if any of them is present use it instead of the one in the config file
+	for key := range ConfigFileOverrides {
+		value := viper.GetString(key)
+		if value == "" {
+			// no value provided by user, continue with the one from the config file
+			continue
+		}
+
+		optionName := strings.ReplaceAll(key, cliFlagDelimeter, configValueDelimeter)
+		if _, option := Contains(optionName); option >= 0 {
+			SetConfigByOption(appConfig.ActiveUserProfile, option, value)
 		}
 	}
 }

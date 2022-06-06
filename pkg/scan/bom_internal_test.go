@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package scan
 
 import (
@@ -14,18 +9,33 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anchore/syft/syft/source"
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
+	"github.com/smartystreets/goconvey/convey"
+)
+
+const (
+	repo = "repo"
+	tag  = "tag"
+
+	defaultDomain    = "docker.io"
+	officialRepoName = "library"
+	defaultTag       = "latest"
+)
+
+var (
+	digest                 = fmt.Sprintf("%x", sha256.Sum256([]byte("digest")))
+	validFullTag           = fmt.Sprintf("%s/%s/%s:%s", defaultDomain, officialRepoName, repo, defaultTag)
+	digestedFullTag        = fmt.Sprintf("%s/%s/%s%s%v", defaultDomain, officialRepoName, repo, digestStart, digest)
+	anchoreDigestedFullTag = fmt.Sprintf("%s/%s/%s%s%v", defaultDomain, officialRepoName, repo, digestToTag, digest)
 )
 
 func TestGenerateBomOk(t *testing.T) {
 	registryHandler := RegistryHandler{registryImageCopy: mockCopyImage}
 
-	bom, err := registryHandler.Generate("foo:latest", Option{})
+	bom, err := registryHandler.Generate("foo:latest", Option{BypassDockerDaemon: true})
 	if err != nil {
 		t.Errorf("failed to generate BOM: %v", err)
 	}
@@ -79,97 +89,108 @@ func TestGenerateBomBadImage(t *testing.T) {
 	}
 }
 
-func TestAttachTag(t *testing.T) {
-	registry := "registry.com"
-	repo := "repo"
-	tag := "tag"
-	digest := fmt.Sprintf("%x", sha256.Sum256([]byte("digest")))
+func TestBomTagFunctions(t *testing.T) {
+	convey.Convey("addDefaultValuesToFullTag(tag string) (string, error)", t, func() {
+		convey.Convey("assert image tag normalized", func() {
+			originTag, err := addDefaultValuesToFullTag(repo)
+			convey.So(err, convey.ShouldBeNil)
+			wantedTag := fmt.Sprintf("%s/%s/%s:%s", defaultDomain, officialRepoName, repo, defaultTag)
+			convey.So(originTag, convey.ShouldEqual, wantedTag)
+		})
 
-	// the doc already contains one valid tag
-	input := fmt.Sprintf("%s/%s:%s-input", registry, repo, tag)
-	fullTag := fmt.Sprintf("%s/%s:%s", registry, repo, tag)
-	doc := bom.JSONDocument{
-		Source: bom.JSONSource{
-			Target: bom.JSONImageSource{
-				ImageMetadata: source.ImageMetadata{
-					Tags: []string{fullTag},
-				},
-			},
-		},
-	}
+		convey.Convey("assert image tag normalized fail on bad tag", func() {
+			originTag, err := addDefaultValuesToFullTag(fmt.Sprintf("%s:123+123", repo))
+			convey.So(err, convey.ShouldBeError)
+			convey.So(originTag, convey.ShouldEqual, originTag)
+		})
+	})
 
-	returnTag := attachTag(&doc, input, Option{})
-	if returnTag != fullTag {
-		t.Errorf("Unexpected full tag returned: %s", returnTag)
-	}
+	convey.Convey("formatTag(tag string) (string, error)", t, func() {
+		convey.Convey("assert digested image get a tag and normalized", func() {
+			originTag, err := formatTag(repo + digestStart + digest)
+			convey.So(err, convey.ShouldBeNil)
+			wantedTag := fmt.Sprintf("%s/%s/%s", defaultDomain, officialRepoName, repo+digestToTag+digest)
+			convey.So(originTag, convey.ShouldEqual, wantedTag)
+		})
 
-	// the input is "repo@sha256:xxx"
-	input = fmt.Sprintf("%s@sha256:%s", repo, digest)
-	fullTag = fmt.Sprintf("docker.io/library/%s@sha256:%s", repo, digest)
-	doc = bom.JSONDocument{
-		Source: bom.JSONSource{
-			Target: bom.JSONImageSource{
-				ImageMetadata: source.ImageMetadata{
-					Tags: []string{},
-				},
-			},
-		},
-	}
+		convey.Convey("assert image tag normalized", func() {
+			originTag, err := formatTag(repo)
+			convey.So(err, convey.ShouldBeNil)
+			convey.So(originTag, convey.ShouldEqual, validFullTag)
+		})
 
-	returnTag = attachTag(&doc, input, Option{})
-	if returnTag != fullTag {
-		t.Errorf("Unexpected full tag returned: %s", returnTag)
-	}
+		convey.Convey("assert fail when on bad tag", func() {
+			originTag, err := formatTag(fmt.Sprintf("%s:123+123", repo))
+			convey.So(err, convey.ShouldBeError)
+			convey.So(originTag, convey.ShouldEqual, originTag)
+		})
+	})
 
-	if doc.Source.Target.(bom.JSONImageSource).Tags[0] !=
-		fmt.Sprintf("docker.io/library/%s:sha256_%s", repo, digest) {
-		t.Errorf("Unexpected full tag attached in doc: %+v", doc)
-	}
+	convey.Convey("formatTags(tags []string, opts Option) []string", t, func() {
+		convey.Convey("assert adding valid fullTag", func() {
+			tags := formatTags([]string{}, validFullTag)
+			convey.So(tags, convey.ShouldHaveLength, 1)
+			convey.So(tags[0], convey.ShouldEqual, validFullTag)
+		})
 
-	// the input is "registry/repo@sha256:xxx"
-	input = fmt.Sprintf("%s/%s@sha256:%s", registry, repo, digest)
-	doc = bom.JSONDocument{
-		Source: bom.JSONSource{
-			Target: bom.JSONImageSource{
-				ImageMetadata: source.ImageMetadata{
-					Tags: []string{},
-				},
-			},
-		},
-	}
+		convey.Convey("assert formatting tags (include add full tag)", func() {
+			tags := formatTags([]string{digestedFullTag}, repo)
+			convey.So(tags, convey.ShouldHaveLength, 2)
+			convey.So(tags[0], convey.ShouldEqual, anchoreDigestedFullTag)
+			// add full tag is last
+			convey.So(tags[1], convey.ShouldEqual, validFullTag)
+		})
 
-	returnTag = attachTag(&doc, input, Option{})
-	if returnTag != input {
-		t.Errorf("Unexpected full tag returned: %s", returnTag)
-	}
+		convey.Convey("assert removing only invalid tags (include add full tag)", func() {
+			tags := formatTags([]string{validFullTag, "bad+sd:+"}, repo+":+12")
+			convey.So(tags, convey.ShouldHaveLength, 1)
+			convey.So(tags[0], convey.ShouldEqual, validFullTag)
+		})
+	})
 
-	if doc.Source.Target.(bom.JSONImageSource).Tags[0] !=
-		fmt.Sprintf("%s/%s:sha256_%s", registry, repo, digest) {
-		t.Errorf("Unexpected full tag attached in doc: %+v", doc)
-	}
+	convey.Convey("revertAnchoreDigestChange(anchorNormalizedTag string) string", t, func() {
+		convey.Convey("assert not affecting nun digested tags", func() {
+			result := revertAnchoreDigestChange(validFullTag)
+			convey.So(result, convey.ShouldEqual, validFullTag)
+		})
 
-	// the input is a tar bar
-	input = fmt.Sprintf("%s.tar", repo)
-	doc = bom.JSONDocument{
-		Source: bom.JSONSource{
-			Target: bom.JSONImageSource{
-				ImageMetadata: source.ImageMetadata{
-					Tags:           []string{},
-					ManifestDigest: digest,
-				},
-			},
-		},
-	}
+		convey.Convey("assert reverting anchore digested tag digested tags", func() {
+			result := revertAnchoreDigestChange(anchoreDigestedFullTag)
+			convey.So(result, convey.ShouldEqual, digestedFullTag)
+		})
+	})
 
-	returnTag = attachTag(&doc, input, Option{})
-	if returnTag != fmt.Sprintf("%s:%s", repo, digest) {
-		t.Errorf("Unexpected full tag returned: %s", returnTag)
-	}
+	convey.Convey("generateFullTagFromOriginInput(tag string, target bom.JSONImageSource) string", t, func() {
+		convey.Convey("assert creation of tag from tar", func() {
+			result := generateFullTagFromOriginInput(fmt.Sprintf("%s.tar", repo), digest)
+			wantedTag := fmt.Sprintf("%s/%s/%s:%s", defaultDomain, officialRepoName, repo, digest)
+			convey.So(result, convey.ShouldEqual, wantedTag)
+		})
 
-	if doc.Source.Target.(bom.JSONImageSource).Tags[0] !=
-		fmt.Sprintf("%s:%s", repo, digest) {
-		t.Errorf("Unexpected full tag attached in doc: %+v", doc)
-	}
+		convey.Convey("assert return of tag when fail adding default values", func() {
+			invalidFullTag := validFullTag + "+1"
+			result := generateFullTagFromOriginInput(invalidFullTag, "")
+			convey.So(result, convey.ShouldEqual, invalidFullTag)
+		})
+
+		convey.Convey("assert normalized all images", func() {
+			convey.Convey("digested images", func() {
+				digestedImage := repo + digestStart + digest
+				result := generateFullTagFromOriginInput(digestedImage, "")
+				convey.So(result, convey.ShouldEqual, digestedFullTag)
+			})
+			convey.Convey("tagged images", func() {
+				taggedImage := repo + ":" + tag
+				result := generateFullTagFromOriginInput(taggedImage, "")
+				convey.So(result, convey.ShouldEqual, fmt.Sprintf("%s/%s/%s", defaultDomain, officialRepoName, taggedImage))
+			})
+			convey.Convey("tag-less images", func() {
+				taggedImage := repo
+				result := generateFullTagFromOriginInput(taggedImage, "")
+				convey.So(result, convey.ShouldEqual, validFullTag)
+			})
+		})
+	})
 }
 
 func mockCopyImage(

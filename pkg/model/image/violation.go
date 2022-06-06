@@ -1,15 +1,10 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package image
 
 import (
 	"bytes"
 	"strings"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/tabletool"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/tabletool"
 )
 
 // PolicyViolation represent a violation of a policy.
