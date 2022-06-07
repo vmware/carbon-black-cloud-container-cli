@@ -7,7 +7,6 @@ require (
 	github.com/anchore/syft v0.15.1
 	github.com/containers/image/v5 v5.18.0
 	github.com/docker/docker v20.10.12+incompatible
-	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/gookit/color v1.2.7
 	github.com/hashicorp/go-multierror v1.1.1
@@ -22,18 +21,17 @@ require (
 	github.com/wagoodman/go-partybus v0.0.0-20200526224238-eb215533f07d
 	github.com/wagoodman/go-progress v0.0.0-20200731105512-1020f39e6240
 	github.com/zalando/go-keyring v0.1.0
-	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1
-	gotest.tools/v3 v3.0.3 // indirect
+	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b
 	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (
 	github.com/Microsoft/hcsshim => github.com/Microsoft/hcsshim v0.8.15
-	github.com/containerd/containerd => github.com/containerd/containerd v1.4.12
+	github.com/containerd/containerd => github.com/containerd/containerd v1.6.6
 	github.com/go-restruct/restruct => github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/google/go-containerregistry => github.com/google/go-containerregistry v0.4.1
 	github.com/opencontainers/image-spec => github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84
-	github.com/opencontainers/runc => github.com/opencontainers/runc v1.0.3
+	github.com/opencontainers/runc => github.com/opencontainers/runc v1.1.2
 	github.com/spf13/viper => github.com/spf13/viper v1.7.1
 )
