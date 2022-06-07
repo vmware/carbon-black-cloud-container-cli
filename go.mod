@@ -8,9 +8,9 @@ require (
 	github.com/containers/image/v5 v5.10.5
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/dustin/go-humanize v1.0.0
-	github.com/google/uuid v1.2.0 // indirect
+	github.com/google/uuid v1.2.0
 	github.com/gookit/color v1.2.7
-	github.com/hashicorp/go-multierror v1.1.0
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.2.1
 	github.com/manifoldco/promptui v0.8.0
 	github.com/mitchellh/go-homedir v1.1.0
@@ -20,6 +20,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/viper v1.8.1
+	github.com/stretchr/testify v1.7.0
 	github.com/wagoodman/go-partybus v0.0.0-20210627031916-db1f5573bbc5
 	github.com/wagoodman/go-progress v0.0.0-20200731105512-1020f39e6240
 	github.com/zalando/go-keyring v0.1.0
@@ -30,7 +31,7 @@ require (
 
 replace (
 	github.com/Microsoft/hcsshim => github.com/Microsoft/hcsshim v0.8.15
-	github.com/containerd/containerd => github.com/containerd/containerd v1.4.4
+	github.com/containerd/containerd => github.com/containerd/containerd v1.6.6
 	github.com/go-restruct/restruct => github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/google/go-containerregistry => github.com/google/go-containerregistry v0.4.1
