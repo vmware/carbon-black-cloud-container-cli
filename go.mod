@@ -28,6 +28,7 @@ require (
 replace (
 	github.com/Microsoft/hcsshim => github.com/Microsoft/hcsshim v0.8.15
 	github.com/containerd/containerd => github.com/containerd/containerd v1.6.6
+	github.com/docker/distribution => github.com/docker/distribution v2.8.1+incompatible
 	github.com/go-restruct/restruct => github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/gogo/protobuf => github.com/gogo/protobuf v1.3.2
 	github.com/google/go-containerregistry => github.com/google/go-containerregistry v0.4.1
