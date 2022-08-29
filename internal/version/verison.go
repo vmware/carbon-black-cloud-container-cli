@@ -10,8 +10,8 @@ import (
 
 	hashiVersion "github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
-	"gitlab.bit9.local/octarine/cbctl/internal/config"
-	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
 )
 
 // all variables here should be assigned via go-liner during build process;

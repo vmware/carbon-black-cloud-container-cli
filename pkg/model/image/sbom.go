@@ -3,7 +3,7 @@ package image
 import (
 	"fmt"
 
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/bom"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
 )
 
 const (

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/image"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
 )
 
 var mockDigest = "digest"

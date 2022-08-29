@@ -14,8 +14,8 @@ import (
 	"strings"
 	"sync"
 
-	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/resource"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/resource"
 	"sigs.k8s.io/yaml"
 )
 

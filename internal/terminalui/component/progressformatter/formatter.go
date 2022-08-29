@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/gookit/color"
-	progress "github.com/wagoodman/go-progress"
+	"github.com/wagoodman/go-progress"
 )
 
 // Theme is the theme of the progress bar.

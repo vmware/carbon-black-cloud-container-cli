@@ -8,8 +8,8 @@ import (
 	"github.com/anchore/syft/syft/source"
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/sirupsen/logrus"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/bom"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
 	"strings"
 )
 

@@ -8,12 +8,12 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gitlab.bit9.local/octarine/cbctl/internal"
-	"gitlab.bit9.local/octarine/cbctl/internal/bus"
-	"gitlab.bit9.local/octarine/cbctl/internal/config"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui"
-	"gitlab.bit9.local/octarine/cbctl/internal/util/printtool"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/printtool"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
 )
 
 const numArgs = 2

@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"gitlab.bit9.local/octarine/cbctl/internal/version"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/bom"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/version"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )

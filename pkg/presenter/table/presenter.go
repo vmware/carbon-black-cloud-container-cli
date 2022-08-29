@@ -4,7 +4,7 @@ package table
 import (
 	"io"
 
-	"gitlab.bit9.local/octarine/cbctl/internal/util/tabletool"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/tabletool"
 )
 
 // Option is the option used for table presenter.
@@ -13,7 +13,7 @@ type Option struct {
 	Limit int
 }
 
-// Presenter will show the analyze result in table format.
+// Presenter will show the analysis result in table format.
 type Presenter struct {
 	provider Provider
 	opts     Option

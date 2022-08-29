@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	keyring "github.com/zalando/go-keyring"
+	"github.com/zalando/go-keyring"
 )
 
 func TestCommandLineHelpText(t *testing.T) {

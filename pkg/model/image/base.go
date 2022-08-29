@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
 )
 
 const k8sOverviewTemplate = "/kubernetes/image/%s/overview"

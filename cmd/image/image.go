@@ -3,8 +3,8 @@ package image
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
-	"gitlab.bit9.local/octarine/cbctl/pkg/scan"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/scan"
 )
 
 type (

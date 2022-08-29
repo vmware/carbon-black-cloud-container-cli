@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"gitlab.bit9.local/octarine/cbctl/internal/util/tabletool"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/tabletool"
 )
 
 // PolicyViolation represent a violation of a policy.

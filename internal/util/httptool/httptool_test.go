@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
 )
 
 var (

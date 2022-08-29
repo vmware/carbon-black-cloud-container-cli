@@ -4,7 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/layers"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/layers"
 	"io"
 	"io/ioutil"
 	"os"

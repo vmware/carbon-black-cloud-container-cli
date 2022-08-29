@@ -3,7 +3,7 @@ package k8sobject
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
 )
 
 type (

@@ -3,11 +3,11 @@ package bus
 import (
 	"fmt"
 
-	"gitlab.bit9.local/octarine/cbctl/internal"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
 )
 
-// EventType is the type of an event message.
+// EventType is the type of event message.
 type EventType string
 
 // All the event types for the bus.
