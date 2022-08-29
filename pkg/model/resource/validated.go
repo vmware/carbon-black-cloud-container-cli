@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/url"
 
-	multierror "github.com/hashicorp/go-multierror"
+	"github.com/hashicorp/go-multierror"
 	"github.com/sirupsen/logrus"
-	"gitlab.bit9.local/octarine/cbctl/internal/config"
-	"gitlab.bit9.local/octarine/cbctl/internal/util/colorizer"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/colorizer"
 )
 
 const (

@@ -9,8 +9,8 @@ build:
 		go build  \
 			-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs" \
 			-o bin/darwin/cbctl \
-			-ldflags "-X 'gitlab.bit9.local/octarine/cbctl/internal/version.version=${version}' \
-				-X 'gitlab.bit9.local/octarine/cbctl/internal/version.buildDate=${build_date}'" \
+			-ldflags "-X 'github.com/vmware/carbon-black-cloud-container-cli/internal/version.version=${version}' \
+				-X 'github.com/vmware/carbon-black-cloud-container-cli/internal/version.buildDate=${build_date}'" \
 			main.go
 
 	# build binary for linux
@@ -18,8 +18,8 @@ build:
 		go build  \
 			-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs" \
 			-o bin/linux/cbctl \
-			-ldflags "-X 'gitlab.bit9.local/octarine/cbctl/internal/version.version=${version}' \
-				-X 'gitlab.bit9.local/octarine/cbctl/internal/version.buildDate=${build_date}'" \
+			-ldflags "-X 'github.com/vmware/carbon-black-cloud-container-cli/internal/version.version=${version}' \
+				-X 'github.com/vmware/carbon-black-cloud-container-cli/internal/version.buildDate=${build_date}'" \
 			main.go
 
 

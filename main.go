@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.bit9.local/octarine/cbctl/cmd"
+	"github.com/vmware/carbon-black-cloud-container-cli/cmd"
 )
 
 func main() {

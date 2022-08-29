@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
 )
 
 // CarbonBlackAccessInfo contains the api id and api key for Carbon Black.

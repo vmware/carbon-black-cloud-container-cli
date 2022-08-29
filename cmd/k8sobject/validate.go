@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"gitlab.bit9.local/octarine/cbctl/internal/bus"
-	"gitlab.bit9.local/octarine/cbctl/internal/config"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
-	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
-	"gitlab.bit9.local/octarine/cbctl/pkg/validate"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/validate"
 )
 
 var (

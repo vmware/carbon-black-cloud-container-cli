@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"gitlab.bit9.local/octarine/cbctl/internal/bus"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
-	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
 )
 
 // Display will help us handle all the incoming events and show them on the terminal.

@@ -3,7 +3,7 @@ package scan
 import (
 	"encoding/json"
 	"fmt"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/layers"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/layers"
 	"net/http"
 	"net/url"
 	"os"
@@ -13,13 +13,13 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	progress "github.com/wagoodman/go-progress"
-	"gitlab.bit9.local/octarine/cbctl/internal/bus"
-	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
-	"gitlab.bit9.local/octarine/cbctl/internal/version"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/bom"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/image"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/version"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
+	"github.com/wagoodman/go-progress"
 )
 
 const (

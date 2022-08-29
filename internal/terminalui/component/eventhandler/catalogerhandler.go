@@ -5,9 +5,9 @@ import (
 
 	"github.com/anchore/syft/syft/pkg/cataloger"
 	"github.com/gookit/color"
-	progress "github.com/wagoodman/go-progress"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/frame"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/spinner"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/frame"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/spinner"
+	"github.com/wagoodman/go-progress"
 )
 
 // CatalogerStartedHandler periodically writes catalog statistics to a single line.

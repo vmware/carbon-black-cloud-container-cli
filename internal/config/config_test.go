@@ -11,9 +11,9 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/require"
-	keyring "github.com/zalando/go-keyring"
-	"gitlab.bit9.local/octarine/cbctl/internal"
-	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
+	"github.com/zalando/go-keyring"
 )
 
 func TestContains(t *testing.T) {

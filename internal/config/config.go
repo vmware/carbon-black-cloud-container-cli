@@ -6,9 +6,9 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	keyring "github.com/zalando/go-keyring"
-	"gitlab.bit9.local/octarine/cbctl/internal"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"github.com/zalando/go-keyring"
 )
 
 var (

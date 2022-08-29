@@ -1,10 +1,10 @@
 package validate
 
 import (
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/resource"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/resource"
 )
 
-// Job represents a validate job for specific resource that should be validated.
+// Job represents a validated job for specific resource that should be validated.
 type Job struct {
 	resourceData string
 	filePath     string

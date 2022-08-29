@@ -5,9 +5,9 @@ import (
 	"os"
 	"runtime"
 
-	"gitlab.bit9.local/octarine/cbctl/internal/config"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/dynamicui"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/plainui"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/dynamicui"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/plainui"
 	"golang.org/x/term"
 )
 

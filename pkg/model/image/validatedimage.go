@@ -3,8 +3,8 @@ package image
 import (
 	"fmt"
 
-	"gitlab.bit9.local/octarine/cbctl/internal/util/colorizer"
-	"gitlab.bit9.local/octarine/cbctl/internal/util/tabletool"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/colorizer"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/tabletool"
 )
 
 const (

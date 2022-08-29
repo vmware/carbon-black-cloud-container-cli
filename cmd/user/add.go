@@ -5,9 +5,9 @@ import (
 	"reflect"
 
 	"github.com/spf13/cobra"
-	"gitlab.bit9.local/octarine/cbctl/internal/bus"
-	"gitlab.bit9.local/octarine/cbctl/internal/config"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui"
 )
 
 // AddCmd will return the user add sub command.

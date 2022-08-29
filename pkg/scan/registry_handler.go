@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/docker/docker/errdefs"
-	"gitlab.bit9.local/octarine/cbctl/internal"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -23,11 +23,11 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 	imagetype "github.com/containers/image/v5/types"
 	"github.com/sirupsen/logrus"
-	partybus "github.com/wagoodman/go-partybus"
-	progress "github.com/wagoodman/go-progress"
-	"gitlab.bit9.local/octarine/cbctl/internal/bus"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
-	"gitlab.bit9.local/octarine/cbctl/pkg/model/layers"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/layers"
+	"github.com/wagoodman/go-partybus"
+	"github.com/wagoodman/go-progress"
 )
 
 const (

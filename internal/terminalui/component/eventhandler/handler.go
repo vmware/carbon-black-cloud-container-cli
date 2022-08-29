@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/gookit/color"
-	progress "github.com/wagoodman/go-progress"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/frame"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/progressformatter"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/spinner"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/frame"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/progressformatter"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/spinner"
+	"github.com/wagoodman/go-progress"
 )
 
 const (
@@ -47,7 +47,7 @@ func (h *Handler) CopyImageHandler(line *frame.Line, value interface{}) error {
 	return h.renderStatusString(pendingMsg, completedMsg, false, true, line, value)
 }
 
-// ReadImageHandler periodically writes a the image read/parse/build-tree status in the form of a progress bar.
+// ReadImageHandler periodically writes an image read/parse/build-tree status in the form of a progress bar.
 func (h *Handler) ReadImageHandler(line *frame.Line, value interface{}) error {
 	pendingMsg := color.Bold.Sprint("Parsing image")
 	completedMsg := color.Bold.Sprint("Parsed image")
@@ -55,7 +55,7 @@ func (h *Handler) ReadImageHandler(line *frame.Line, value interface{}) error {
 	return h.renderStatusString(pendingMsg, completedMsg, true, false, line, value)
 }
 
-// FetchImageHandler periodically writes a the image save and write-to-disk process in the form of a progress bar.
+// FetchImageHandler periodically writes an image save and write-to-disk process in the form of a progress bar.
 func (h *Handler) FetchImageHandler(line *frame.Line, value interface{}) error {
 	pendingMsg := color.Bold.Sprint("Loading image")
 	completedMsg := color.Bold.Sprint("Loaded image")

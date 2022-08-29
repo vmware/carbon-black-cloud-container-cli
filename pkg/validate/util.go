@@ -2,7 +2,7 @@ package validate
 
 import (
 	"github.com/sirupsen/logrus"
-	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
 )
 
 // CheckValidBuildStep checks that a build step has a valid name.

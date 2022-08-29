@@ -4,12 +4,12 @@ package presenter
 import (
 	"io"
 
-	"gitlab.bit9.local/octarine/cbctl/pkg/presenter/cyclondx"
-	"gitlab.bit9.local/octarine/cbctl/pkg/presenter/json"
-	"gitlab.bit9.local/octarine/cbctl/pkg/presenter/table"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter/cyclondx"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter/json"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter/table"
 )
 
-// Presenter will show the analyze result to a given io.Writer.
+// Presenter will show the analysis result to a given io.Writer.
 type Presenter interface {
 	Present(io.Writer) error
 	Title() string

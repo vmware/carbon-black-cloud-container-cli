@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/anchore/stereoscope/pkg/image/docker"
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/gookit/color"
-	progress "github.com/wagoodman/go-progress"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/frame"
-	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/spinner"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/frame"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/spinner"
+	"github.com/wagoodman/go-progress"
 )
 
 var (
