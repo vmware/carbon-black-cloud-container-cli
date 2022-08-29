@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package cmd
 
 import (
@@ -10,23 +5,28 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/mitchellh/go-homedir"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/auth"
-	configcmd "github.com/vmware/carbon-black-cloud-container-cli/cmd/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/image"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/k8sobject"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/user"
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd/version"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/cmd/auth"
+	configcmd "gitlab.bit9.local/octarine/cbctl/cmd/config"
+	"gitlab.bit9.local/octarine/cbctl/cmd/image"
+	"gitlab.bit9.local/octarine/cbctl/cmd/k8sobject"
+	"gitlab.bit9.local/octarine/cbctl/cmd/user"
+	"gitlab.bit9.local/octarine/cbctl/cmd/version"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
 )
 
 var defaultConfigHome string
+
+const (
+	permModeReadWrite        = 0666
+	permModeReadWriteExecute = 0700
+)
 
 func init() {
 	setGlobalCliOptions()
@@ -62,7 +62,7 @@ func initLog() {
 		return
 	}
 
-	if file, err := os.OpenFile(flag.Value.String(), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666); err == nil {
+	if file, err := os.OpenFile(flag.Value.String(), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, permModeReadWrite); err == nil {
 		logrus.SetLevel(logrus.DebugLevel)
 		logrus.SetOutput(file)
 
@@ -76,7 +76,7 @@ func initLog() {
 	// create folder in the default config home if not exists
 	createFolder(defaultConfigHome)
 
-	if file, err := os.OpenFile(flag.NoOptDefVal, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666); err == nil {
+	if file, err := os.OpenFile(flag.NoOptDefVal, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, permModeReadWrite); err == nil {
 		logrus.SetLevel(logrus.DebugLevel)
 		logrus.SetOutput(file)
 
@@ -126,6 +126,11 @@ func setGlobalCliOptions() {
 	logDefaultName := fmt.Sprintf("%s/debug.log", defaultConfigHome)
 	rootCmd.PersistentFlags().String(flag, logDefaultName, "enable debug log")
 	rootCmd.Flag(flag).NoOptDefVal = logDefaultName
+
+	for flag, usage := range config.ConfigFileOverrides {
+		rootCmd.PersistentFlags().String(flag, "", usage)
+		_ = viper.BindPFlag(flag, rootCmd.PersistentFlags().Lookup(flag))
+	}
 }
 
 // findHomeDir will find the home directory follow XDG standards.
@@ -164,7 +169,7 @@ func findHomeDir() string {
 func createFolder(dir string) {
 	if _, err := os.Stat(dir); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(dir, 0700); err != nil {
+			if err := os.MkdirAll(dir, permModeReadWriteExecute); err != nil {
 				msg := fmt.Sprintf("Failed to create directory \"%s\", please create it manually", dir)
 				e := cberr.NewError(cberr.ConfigErr, msg, err)
 				bus.Publish(bus.NewErrorEvent(e))

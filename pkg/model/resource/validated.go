@@ -1,18 +1,13 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package resource
 
 import (
 	"fmt"
 	"net/url"
 
-	"github.com/hashicorp/go-multierror"
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/colorizer"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/colorizer"
 )
 
 const (

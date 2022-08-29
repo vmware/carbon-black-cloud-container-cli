@@ -1,14 +1,9 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package k8sobject manages the k8s-resource analysis subcommands.
 package k8sobject
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
 )
 
 type (

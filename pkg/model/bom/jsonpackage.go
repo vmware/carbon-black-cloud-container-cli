@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package bom
 
 import (
@@ -42,7 +37,7 @@ func newJSONPackages(catalog *pkg.Catalog) []JSONPackage {
 }
 
 // newJSONPackage crates a new JSONPackage from the given pkg.Package.
-func newJSONPackage(p *pkg.Package) JSONPackage {
+func newJSONPackage(p pkg.Package) JSONPackage {
 	cpes := make([]string, len(p.CPEs))
 	for i, c := range p.CPEs {
 		cpes[i] = c.BindToFmtString()
@@ -50,8 +45,9 @@ func newJSONPackage(p *pkg.Package) JSONPackage {
 
 	// ensure collections are never nil for presentation reasons
 	locations := make([]source.Location, 0)
-	if p.Locations != nil {
-		locations = p.Locations
+	packageLocations := p.Locations.ToSlice()
+	if packageLocations != nil {
+		locations = packageLocations
 	}
 
 	licenses := make([]string, 0)
@@ -60,7 +56,7 @@ func newJSONPackage(p *pkg.Package) JSONPackage {
 	}
 
 	return JSONPackage{
-		ID:           string(p.ID),
+		ID:           string(p.ID()),
 		Name:         p.Name,
 		Version:      p.Version,
 		Type:         string(p.Type),

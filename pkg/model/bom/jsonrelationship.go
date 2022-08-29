@@ -1,11 +1,8 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package bom
 
-import "github.com/anchore/syft/syft/pkg"
+import (
+	"github.com/anchore/syft/syft/artifact"
+)
 
 // JSONRelationship denotes the relationship of artifacts.
 type JSONRelationship struct {
@@ -15,14 +12,14 @@ type JSONRelationship struct {
 	Metadata interface{} `json:"metadata"`
 }
 
-func newJSONRelationships(relationships []pkg.Relationship) []JSONRelationship {
+func newJSONRelationships(relationships []artifact.Relationship) []JSONRelationship {
 	result := make([]JSONRelationship, len(relationships))
 	for i, r := range relationships {
 		result[i] = JSONRelationship{
-			Parent:   string(r.Parent),
-			Child:    string(r.Child),
+			Parent:   string(r.From.ID()),
+			Child:    string(r.To.ID()),
 			Type:     string(r.Type),
-			Metadata: r.Metadata,
+			Metadata: r.Data,
 		}
 	}
 

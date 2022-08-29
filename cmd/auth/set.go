@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package auth
 
 import (
@@ -12,12 +7,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/printtool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/zalando/go-keyring"
+	keyring "github.com/zalando/go-keyring"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/printtool"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
 )
 
 const numArgs = 2

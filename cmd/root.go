@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package cmd
 
 import (
@@ -10,12 +5,12 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/memorytool"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/version"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/memorytool"
+	"gitlab.bit9.local/octarine/cbctl/internal/version"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
 )
 
 var ctx, cancel = context.WithCancel(context.Background())

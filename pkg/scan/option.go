@@ -1,19 +1,20 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package scan
 
 import (
 	"strings"
 )
 
+const (
+	splitCount = 2
+)
+
 // Option is the option used for image related cmd.
 type Option struct {
 	// ForceScan is the option whether to force scan an image no matter it is scanned or not.
 	ForceScan bool
-	// UseDockerDaemon is whether to use docker daemon to pull the image
+	// BypassDockerDaemon is whether not to use docker daemon to pull the image
+	BypassDockerDaemon bool
+	// UseDockerDaemon deprecated.
 	UseDockerDaemon bool
 	// Credential is the auth string used for login to registry, format: USERNAME[:PASSWORD]
 	Credential string
@@ -26,7 +27,7 @@ type Option struct {
 }
 
 func (o Option) parseAuth() (username string, password string) {
-	up := strings.SplitN(o.Credential, ":", 2)
+	up := strings.SplitN(o.Credential, ":", splitCount)
 
 	username = up[0]
 

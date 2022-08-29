@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package eventhandler
 
 import (
@@ -12,10 +7,10 @@ import (
 	"time"
 
 	"github.com/gookit/color"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/frame"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/progressformatter"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui/component/spinner"
-	"github.com/wagoodman/go-progress"
+	progress "github.com/wagoodman/go-progress"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/frame"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/progressformatter"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui/component/spinner"
 )
 
 const (

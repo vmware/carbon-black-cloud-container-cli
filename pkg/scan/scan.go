@@ -1,13 +1,9 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package scan
 
 import (
 	"encoding/json"
 	"fmt"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/layers"
 	"net/http"
 	"net/url"
 	"os"
@@ -17,13 +13,13 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/version"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
-	"github.com/wagoodman/go-progress"
+	progress "github.com/wagoodman/go-progress"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
+	"gitlab.bit9.local/octarine/cbctl/internal/version"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/bom"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/image"
 )
 
 const (
@@ -53,6 +49,7 @@ type Handler struct {
 	buildStep    string
 	namespace    string
 	bom          *Bom
+	layers       []layers.Layer
 	pollPause    time.Duration
 	pollInterval time.Duration
 	pollDuration time.Duration
@@ -61,6 +58,7 @@ type Handler struct {
 // analysisPayload is the payload used for uploading sbom to image scanning service.
 type analysisPayload struct {
 	SBOM      *bom.JSONDocument `json:"sbom"`
+	Layers    []layers.Layer    `json:"layers"`
 	BuildStep string            `json:"build_step"`
 	Namespace string            `json:"namespace"`
 	ForceScan bool              `json:"force_scan"`
@@ -71,7 +69,7 @@ type analysisPayload struct {
 }
 
 // NewScanHandler will create a handler for scan cmd.
-func NewScanHandler(saasTmpl, orgKey, apiID, apiKey string, bom *Bom) *Handler {
+func NewScanHandler(saasTmpl, orgKey, apiID, apiKey string, bom *Bom, layers []layers.Layer) *Handler {
 	saasTmpl = strings.Trim(saasTmpl, "/")
 	saasTmpl = strings.TrimSuffix(saasTmpl, "/orgs")
 	saasTmpl = strings.TrimSuffix(saasTmpl, "/v1")
@@ -82,25 +80,27 @@ func NewScanHandler(saasTmpl, orgKey, apiID, apiKey string, bom *Bom) *Handler {
 	basePath := fmt.Sprintf("%s/v1beta/orgs/%s", saasTmpl, orgKey)
 	session := httptool.NewRequestSession(apiID, apiKey)
 
-	return newScanHandler(session, basePath, bom)
+	return newScanHandler(session, basePath, bom, layers)
 }
 
-func newScanHandler(session *httptool.RequestSession, basePath string, bom *Bom) *Handler {
+func newScanHandler(session *httptool.RequestSession, basePath string, bom *Bom, layers []layers.Layer) *Handler {
 	return &Handler{
 		session:      session,
 		basePath:     basePath,
 		bom:          bom,
+		layers:       layers,
 		pollPause:    10 * time.Second,
 		pollDuration: 600 * time.Second,
 		pollInterval: 5 * time.Second,
 	}
 }
 
-// AttachSBOMBuildStepAndNamespace will attach sbom & policy to the handler.
-func (h *Handler) AttachSBOMBuildStepAndNamespace(bom *Bom, buildStep, namespace string) {
+// AttachData will attach sbom, layers & policy to the handler.
+func (h *Handler) AttachData(bom *Bom, layers []layers.Layer, buildStep, namespace string) {
 	h.buildStep = buildStep
 	h.namespace = namespace
 	h.bom = bom
+	h.layers = layers
 }
 
 // HealthCheck will check the health of the service backend.
@@ -147,7 +147,7 @@ func (h *Handler) Scan(opts Option) (*image.ScannedImage, error) {
 		logrus.Infof("Scanning image, current stage: %v", currentStage)
 		stage.Current = currentStage
 
-		if status, err := h.PutBomToAnalysisAPI(opts); err != nil {
+		if status, err := h.PutBomAndLayersToAnalysisAPI(opts); err != nil {
 			errChan <- err
 			return
 		} else if status == FinishedStatus {
@@ -203,11 +203,13 @@ func (h *Handler) Scan(opts Option) (*image.ScannedImage, error) {
 	}
 }
 
-// PutBomToAnalysisAPI will call the PUT API and upload sbom to image scanning service.
-func (h Handler) PutBomToAnalysisAPI(opts Option) (Status, error) {
+// PutBomAndLayersToAnalysisAPI will call the PUT API and upload sbom to image scanning service.
+func (h Handler) PutBomAndLayersToAnalysisAPI(opts Option) (Status, error) {
 	versionInfo := version.GetCurrentVersion()
+
 	payload := &analysisPayload{
 		SBOM:      &h.bom.Packages,
+		Layers:    h.layers,
 		BuildStep: h.buildStep,
 		Namespace: h.namespace,
 		ForceScan: opts.ForceScan,
@@ -348,6 +350,9 @@ func (h Handler) GetImageVulnerability(digest string) (*image.ScannedImage, erro
 
 		return nil, e
 	}
+
+	// Unpacking packages from the sbom, if we want to unpack from backend, remove this line.
+	scannedImage.Packages = h.bom.Packages
 
 	return &scannedImage, nil
 }

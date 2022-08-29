@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package config_test
 
 import (
@@ -15,9 +10,10 @@ import (
 	"testing"
 
 	"github.com/spf13/viper"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/zalando/go-keyring"
+	"github.com/stretchr/testify/require"
+	keyring "github.com/zalando/go-keyring"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
 )
 
 func TestContains(t *testing.T) {
@@ -55,6 +51,88 @@ func TestSuggestionsFor(t *testing.T) {
 			t.Errorf("Unexpected suggestion get: %v", s)
 		}
 	}
+}
+
+func TestLoadConfigFromEnvVariables(t *testing.T) {
+	var (
+		apiIDFromEnvVar  = "api-id-from-env-var"
+		apiKeyFromEnvVar = "api-key-from-env-var"
+		orgKeyFromEnvVar = "org-key-from-env-var"
+
+		saasURLFromConfigFile = "https://test-1.com"
+	)
+
+	mockValues := map[string]string{
+		"user-profile":     "test-1",
+		"test-2.org_key":   "test-2-org",
+		"test-2.cb_api_id": "123",
+		// these value conflict with the ones from the env variable
+		// these should be overridden by the env variables
+		"cb_api_id":  "ABC123",
+		"cb_api_key": "ABC1234",
+		"org_key":    "test-1-org",
+		// this value is not overridden by env variables, so it should match
+		"saas_url": saasURLFromConfigFile,
+	}
+	for k, v := range mockValues {
+		viper.Set(k, v)
+	}
+
+	_ = os.Setenv("CBCTL_CB_API_ID", apiIDFromEnvVar)
+	_ = os.Setenv("CBCTL_CB_API_KEY", apiKeyFromEnvVar)
+	_ = os.Setenv("CBCTL_ORG_KEY", orgKeyFromEnvVar)
+
+	t.Cleanup(func() {
+		viper.Reset()
+
+		_ = os.Setenv("CBCTL_CB_API_ID", "")
+		_ = os.Setenv("CBCTL_CB_API_KEY", "")
+		_ = os.Setenv("CBCTL_ORG_KEY", "")
+	})
+
+	config.LoadAppConfig()
+
+	require.Equal(t, apiKeyFromEnvVar, config.GetConfig(config.CBApiKey))
+	require.Equal(t, apiIDFromEnvVar, config.GetConfig(config.CBApiID))
+	require.Equal(t, orgKeyFromEnvVar, config.GetConfig(config.OrgKey))
+	require.Equal(t, saasURLFromConfigFile, config.GetConfig(config.SaasURL))
+}
+
+func TestLoadConfigCLIValuesOverride(t *testing.T) {
+	var (
+		apiIDFromCLIFlags   = "api-id-from-cli-flags"
+		apiKeyFromCLIFlags  = "api-key-from-cli-flags"
+		orgKeyFromCLIFlags  = "org-key-from-cli-flags"
+		saasURLFromCLIFlags = "saas-url-from-cli-flags"
+	)
+
+	// initialize mock values
+	mockValues := map[string]string{
+		"user-profile":     "test-1",
+		"org_key":          "test-1-org",
+		"cb_api_id":        "ABC123",
+		"saas_url":         "https://test-1.com",
+		"test-2.org_key":   "test-2-org",
+		"test-2.cb_api_id": "123",
+
+		// these are options passed as CLI args and should override the ones coming from config file
+		"cb-api-id":  apiIDFromCLIFlags,
+		"cb-api-key": apiKeyFromCLIFlags,
+		"org-key":    orgKeyFromCLIFlags,
+		"saas-url":   saasURLFromCLIFlags,
+	}
+	for k, v := range mockValues {
+		viper.Set(k, v)
+	}
+
+	defer viper.Reset()
+
+	config.LoadAppConfig()
+
+	require.Equal(t, apiIDFromCLIFlags, config.GetConfig(config.CBApiID))
+	require.Equal(t, apiKeyFromCLIFlags, config.GetConfig(config.CBApiKey))
+	require.Equal(t, orgKeyFromCLIFlags, config.GetConfig(config.OrgKey))
+	require.Equal(t, saasURLFromCLIFlags, config.GetConfig(config.SaasURL))
 }
 
 func TestLoadAndPersistAppConfig(t *testing.T) {

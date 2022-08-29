@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package httptool_test
 
 import (
@@ -13,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
 )
 
 var (

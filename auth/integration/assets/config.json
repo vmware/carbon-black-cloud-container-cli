@@ -1,0 +1,8 @@
+{
+        "auths": {
+                "dev.registry.tanzu.vmware.com": {
+                	"username": "foo",
+                	"password": "bar"
+                }
+        }
+}

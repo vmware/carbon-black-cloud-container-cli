@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package bom
 
 import (
@@ -39,7 +34,7 @@ func newJSONSource(src source.Metadata, scope source.Scope) (JSONSource, error) 
 			Type:   "directory",
 			Target: src.Path,
 		}, nil
-	case source.UnknownScheme:
+	case source.UnknownScheme, source.FileScheme:
 		fallthrough
 	default:
 		return JSONSource{}, fmt.Errorf("unsupported source: %q", src.Scheme)

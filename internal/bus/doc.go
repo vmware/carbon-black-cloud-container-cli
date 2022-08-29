@@ -1,9 +1,4 @@
 /*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
-/*
 Package bus provides access to a singleton instance of an event bus (provided by the calling application). These events
 can provide static information, but also have an object as a payload for which the consumer can poll for updates.
 

@@ -1,27 +1,24 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package image
 
 import (
 	"context"
 	"fmt"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/layers"
+	"sync"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/printtool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/scan"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/printtool"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/image"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
+	"gitlab.bit9.local/octarine/cbctl/pkg/scan"
 )
 
 var scanHandler *scan.Handler
@@ -45,7 +42,7 @@ Supports the following image sources:
 			apiID := config.GetConfig(config.CBApiID)
 			apiKey := config.GetConfig(config.CBApiKey)
 
-			scanHandler = scan.NewScanHandler(saasURL, orgKey, apiID, apiKey, nil)
+			scanHandler = scan.NewScanHandler(saasURL, orgKey, apiID, apiKey, nil, nil)
 			if err := scanHandler.HealthCheck(); err != nil {
 				bus.Publish(bus.NewErrorEvent(err))
 			}
@@ -55,6 +52,12 @@ Supports the following image sources:
 			terminalui.NewDisplay().DisplayEvents()
 		},
 	}
+
+	scanCmd.PersistentFlags().BoolVar(
+		&opts.ForceScan, "force", false, "trigger a force scan no matter the image is scanned or not")
+	scanCmd.PersistentFlags().IntVar(
+		&opts.Limit, "limit", fullTable, // set to 0 will show all rows
+		"number of rows to show in the report (for table format only)")
 
 	return scanCmd
 }
@@ -73,18 +76,48 @@ func actualScan(input string, handler *scan.Handler, buildStep, namespace string
 
 	registryHandler := scan.NewRegistryHandler()
 
-	generatedBom, err := registryHandler.Generate(input, opts.scanOption)
-	if err != nil {
-		bus.Publish(bus.NewErrorEvent(err))
+	var generatedBom *scan.Bom
+	var imgLayers []layers.Layer
+	var errBom, errLayers error
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		generatedBom, errBom = registryHandler.GenerateSBOM(input, opts.scanOption)
+		wg.Done()
+	}()
+
+	go func() {
+		imgLayers, errLayers = registryHandler.GenerateLayers(input, opts.scanOption)
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	if errBom != nil {
+		bus.Publish(bus.NewErrorEvent(errBom))
 		return nil, true
 	}
 
 	if generatedBom == nil {
 		msg = fmt.Sprintf("Generated sbom for %s is empty", input)
-		e := cberr.NewError(cberr.SBOMGenerationErr, msg, err)
+		e := cberr.NewError(cberr.SBOMGenerationErr, msg, errBom)
 		bus.Publish(bus.NewErrorEvent(e))
 		logrus.Errorln(e)
 
+		return nil, true
+	}
+
+	if errLayers != nil {
+		// Not directly exposed to customers so we don't treat this as fatal error yet
+		logrus.WithError(errLayers).Debugln(fmt.Sprintf("failed to calculate layers for image"))
+	}
+
+	handler.AttachData(generatedBom, imgLayers, buildStep, namespace)
+
+	result, err := handler.Scan(opts.scanOption)
+	if err != nil {
+		bus.Publish(bus.NewErrorEvent(err))
 		return nil, true
 	}
 
@@ -95,14 +128,6 @@ func actualScan(input string, handler *scan.Handler, buildStep, namespace string
 				_, _ = dockerClient.ImageRemove(context.Background(), input, types.ImageRemoveOptions{})
 			}
 		}()
-	}
-
-	handler.AttachSBOMBuildStepAndNamespace(generatedBom, buildStep, namespace)
-
-	result, err := handler.Scan(opts.scanOption)
-	if err != nil {
-		bus.Publish(bus.NewErrorEvent(err))
-		return nil, true
 	}
 
 	return result, false

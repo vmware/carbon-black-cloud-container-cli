@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package validate
 
 import (
@@ -13,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/image"
 )
 
 const (
