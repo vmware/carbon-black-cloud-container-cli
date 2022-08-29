@@ -1,15 +1,10 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package main
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/cmd"
+	"gitlab.bit9.local/octarine/cbctl/cmd"
 )
 
 func main() {

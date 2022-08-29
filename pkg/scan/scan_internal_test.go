@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package scan
 
 import (
@@ -13,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/image"
 )
 
 var mockDigest = "digest"
 
 func TestNewScanHandler(t *testing.T) {
-	dummyHandler := NewScanHandler("defense-dev01.cbdtest.io/containers", "ABCD123", "FOO", "BAR", nil)
+	dummyHandler := NewScanHandler("defense-dev01.cbdtest.io/containers", "ABCD123", "FOO", "BAR", nil, nil)
 
 	if dummyHandler == nil {
 		t.Errorf("failed to construct a scan handler")
@@ -28,7 +23,7 @@ func TestNewScanHandler(t *testing.T) {
 	}
 
 	fakeBuildStep, fakeNamespace := "fake_build_step", "fake_namespace"
-	dummyHandler.AttachSBOMBuildStepAndNamespace(nil, fakeBuildStep, fakeNamespace)
+	dummyHandler.AttachData(nil, nil, fakeBuildStep, fakeNamespace)
 
 	if dummyHandler.buildStep != fakeBuildStep {
 		t.Errorf("build step didn't attach correctly")

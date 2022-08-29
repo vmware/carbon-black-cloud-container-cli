@@ -1,18 +1,13 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package version manages the all commands related to version.
 package version
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/printtool"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/version"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/internal/terminalui"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/printtool"
+	"gitlab.bit9.local/octarine/cbctl/internal/version"
 )
 
 // Cmd will return the version command.

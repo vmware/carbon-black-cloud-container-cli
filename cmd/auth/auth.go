@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package auth manages the credentials subcommand and utility functions.
 package auth
 

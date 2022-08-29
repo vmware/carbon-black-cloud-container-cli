@@ -1,15 +1,10 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package cmd
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/zalando/go-keyring"
+	keyring "github.com/zalando/go-keyring"
 )
 
 func TestCommandLineHelpText(t *testing.T) {

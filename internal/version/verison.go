@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package version contains all metadata for cli.
 package version
 
@@ -15,8 +10,8 @@ import (
 
 	hashiVersion "github.com/hashicorp/go-version"
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
 )
 
 // all variables here should be assigned via go-liner during build process;

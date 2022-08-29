@@ -1,15 +1,10 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package bus
 
 import (
 	"fmt"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/internal"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
 )
 
 // EventType is the type of an event message.
@@ -29,6 +24,7 @@ const (
 	CatalogerFinished              EventType = "syft-cataloger-finished-event"
 	ScanStarted                    EventType = "image-scanning-started-event"
 	ScanFinished                   EventType = "image-scanning-finished-event"
+	PrintSBOM                      EventType = "print-sbom-event"
 	ValidateFinishedWithViolations EventType = "validate-finished-with-violations"
 	ValidateFinishedSuccessfully   EventType = "validate-finished-successfully"
 )

@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package validate
 
 import (
@@ -19,8 +14,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/resource"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/httptool"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/resource"
 	"sigs.k8s.io/yaml"
 )
 
@@ -245,13 +240,12 @@ func (h K8SObjectHandler) analyzeResults(
 		if job.error != "" {
 			result.Errors = append(result.Errors, fmt.Sprintf("%v (%v)", job.error, job.filePath))
 		} else if job.result != nil {
-			violatedResource := resource.ValidatedResource{
+			result.ViolatedResources = append(result.ViolatedResources, resource.ValidatedResource{
 				Scope:            job.result.Scope,
 				FilePath:         job.filePath,
 				Policy:           job.result.Policy,
 				PolicyViolations: job.result.PolicyViolations,
-			}
-			result.ViolatedResources = append(result.ViolatedResources, violatedResource)
+			})
 		}
 	}
 }

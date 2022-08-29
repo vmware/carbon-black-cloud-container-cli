@@ -1,12 +1,7 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package validate
 
 import (
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/resource"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/resource"
 )
 
 // Job represents a validate job for specific resource that should be validated.

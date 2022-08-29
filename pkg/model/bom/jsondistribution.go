@@ -1,11 +1,10 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package bom
 
-import "github.com/anchore/syft/syft/distro"
+import (
+	"strings"
+
+	"github.com/anchore/syft/syft/linux"
+)
 
 // JSONDistribution provides information about a detected Linux JSONDistribution.
 type JSONDistribution struct {
@@ -15,14 +14,14 @@ type JSONDistribution struct {
 }
 
 // newJSONDistribution creates a struct with the Linux distribution to be represented in JSON.
-func newJSONDistribution(d *distro.Distro) JSONDistribution {
+func newJSONDistribution(d *linux.Release) JSONDistribution {
 	if d == nil {
 		return JSONDistribution{}
 	}
 
 	return JSONDistribution{
-		Name:    d.Name(),
-		Version: d.FullVersion(),
-		IDLike:  d.IDLike,
+		Name:    d.ID,
+		Version: d.VersionID,
+		IDLike:  strings.Join(d.IDLike, " "),
 	}
 }

@@ -1,15 +1,10 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package image
 
 import (
 	"fmt"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/colorizer"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/tabletool"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/colorizer"
+	"gitlab.bit9.local/octarine/cbctl/internal/util/tabletool"
 )
 
 const (

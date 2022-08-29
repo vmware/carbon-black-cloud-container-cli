@@ -1,12 +1,15 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package image
 
 import (
+	"encoding/xml"
 	"fmt"
+	"strings"
+
+	"github.com/google/uuid"
+	"gitlab.bit9.local/octarine/cbctl/internal/version"
+	"gitlab.bit9.local/octarine/cbctl/pkg/model/bom"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 const (
@@ -27,6 +30,7 @@ type ScannedImage struct {
 	ScanStatus       string            `json:"scan_status"`
 	Vulnerabilities  []Vulnerability   `json:"vulnerabilities"`
 	PolicyViolations []PolicyViolation `json:"policy_violations,omitempty"`
+	Packages         bom.JSONDocument  `json:"packages"`
 }
 
 // Title is the title of the ScannedImage result.
@@ -66,4 +70,73 @@ func (s *ScannedImage) Rows() [][]string {
 	}
 
 	return result
+}
+
+// CycloneDXDoc returns all the vulnerabilities of the ScannedImage result as list of rows.
+func (s *ScannedImage) CycloneDXDoc() ([]byte, error) {
+	doc := Document{
+		XMLNs:        "http://cyclonedx.org/schema/bom/1.2",
+		XMLNsV:       "http://cyclonedx.org/schema/ext/vulnerability/1.0",
+		Version:      1,
+		SerialNumber: uuid.New().URN(),
+	}
+
+	cbctlVersion := version.GetCurrentVersion()
+	doc.BomDescriptor = NewBomDescriptor("Carbon Black", cbctlVersion.Version, s.FullTag, s.ManifestDigest)
+
+	for _, artifact := range s.Packages.Artifacts {
+		// make a new Component (by value)
+		component := Component{
+			Type:    "library",
+			Name:    artifact.Name,
+			Version: artifact.Version,
+		}
+
+		var licenses []License
+		for _, licenseName := range artifact.Licenses {
+			licenses = append(licenses, License{
+				Name: licenseName,
+			})
+		}
+
+		if len(licenses) > 0 {
+			// adding licenses to the Component
+			component.Licenses = &licenses
+		}
+
+		var vulnerabilities []VulnerabilityCyclon
+
+		for _, vul := range s.Vulnerabilities {
+			if artifact.Name == vul.Name {
+				var vulnerability VulnerabilityCyclon
+				vulnerability.ID = vul.ID
+				vulnerability.Description = vul.Description
+				vulnerability.Source.Name = vul.Type
+				vulnerability.Source.URL = MakeVulnerabilityURL(vul.ID)
+
+				ratings := make([]Rating, 1)
+				severity := cases.Title(language.AmericanEnglish).String(strings.ToLower(vul.Severity))
+				ratings[0].Severity = severity
+				vulnerability.Ratings = ratings
+
+				fixAvailable := make([]string, 1)
+				fixAvailable[0] = vul.FixAvailable
+
+				myAdvisory := new(Advisories)
+				myAdvisory.Advisory = fixAvailable
+
+				vulnerability.Advisories = myAdvisory
+
+				vulnerabilities = append(vulnerabilities, vulnerability)
+			}
+		}
+
+		if len(vulnerabilities) > 0 {
+			component.Vulnerabilities = &vulnerabilities
+		}
+
+		doc.Components = append(doc.Components, component)
+	}
+
+	return xml.MarshalIndent(doc, "", " ")
 }

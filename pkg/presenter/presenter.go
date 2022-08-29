@@ -1,17 +1,12 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
-// Package presenter provides utilities for showing results to the user
-// in different format
+// Package presenter provides utilities for showing results to the user in different format.
 package presenter
 
 import (
 	"io"
 
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter/json"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter/table"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter/cyclondx"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter/json"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter/table"
 )
 
 // Presenter will show the analyze result to a given io.Writer.
@@ -40,6 +35,8 @@ func NewPresenter(provider Provider, opts Option) Presenter {
 	switch opts.OutputFormat {
 	case "json", "j":
 		return json.NewPresenter(provider.(json.Provider))
+	case "cyclonedx", "c":
+		return cyclondx.NewPresenter(provider.(cyclondx.Provider))
 	case "table", "t":
 		fallthrough
 	default:

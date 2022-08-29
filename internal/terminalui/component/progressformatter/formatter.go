@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package progressformatter is an implementation based on github.com/wagoodman/go-progress/simple
 package progressformatter
 
@@ -11,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/gookit/color"
-	"github.com/wagoodman/go-progress"
+	progress "github.com/wagoodman/go-progress"
 )
 
 // Theme is the theme of the progress bar.

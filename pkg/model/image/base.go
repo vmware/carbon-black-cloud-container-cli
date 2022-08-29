@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package image
 
 import (
@@ -10,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
+	"gitlab.bit9.local/octarine/cbctl/internal/config"
 )
 
 const k8sOverviewTemplate = "/kubernetes/image/%s/overview"

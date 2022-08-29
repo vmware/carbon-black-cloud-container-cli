@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package cberr
 
 // Code is the type of machine-readable error code.
@@ -17,6 +12,7 @@ const (
 	HTTPNotFoundErr
 	HTTPNotAllowedErr
 	SBOMGenerationErr
+	LayersGenerationErr
 	ScanFailedErr
 	ValidateFailedErr
 	TimeoutErr
@@ -40,6 +36,8 @@ func (c Code) exitCode() int {
 	case HTTPNotAllowedErr:
 		return 1
 	case SBOMGenerationErr:
+		return 1
+	case LayersGenerationErr:
 		return 1
 	case ScanFailedErr:
 		return 1

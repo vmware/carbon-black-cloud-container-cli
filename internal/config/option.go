@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 package config
 
 import (
@@ -51,6 +46,8 @@ func (o Option) String() string {
 	default:
 		panic(fmt.Sprintf("Invalid config option provided: %d", o))
 	}
+
+	return ""
 }
 
 // StringWithPrefix will return the option string with a prefix.

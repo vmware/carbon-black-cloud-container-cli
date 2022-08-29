@@ -1,8 +1,3 @@
-/*
- * Copyright 2021 VMware, Inc.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 // Package plainui provides display handler for generic terminal
 package plainui
 
@@ -11,9 +6,9 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vmware/carbon-black-cloud-container-cli/internal/bus"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
+	"gitlab.bit9.local/octarine/cbctl/internal/bus"
+	"gitlab.bit9.local/octarine/cbctl/pkg/cberr"
+	"gitlab.bit9.local/octarine/cbctl/pkg/presenter"
 )
 
 // Display will help us handle all the incoming events and show them on the terminal.
@@ -22,6 +17,31 @@ type Display struct{}
 // NewDisplay will initialize a display instance.
 func NewDisplay() *Display {
 	return &Display{}
+}
+
+// displayResults will display result.
+func displayResults(e bus.Event) error {
+	var displayErrLocal error
+
+	var pres presenter.Presenter
+
+	pres, ok := e.Value().(presenter.Presenter)
+	if !ok {
+		return fmt.Errorf("internal error in display results")
+	}
+
+	_ = printMessageOnStderr("")
+	displayErrLocal = printMessageOnStderr(pres.Title())
+
+	if err := pres.Present(os.Stdout); err != nil {
+		displayErrLocal = fmt.Errorf("failed to show results: %v", err)
+	}
+
+	if pres.Footer() != "" {
+		displayErrLocal = printMessageOnStderr(pres.Footer())
+	}
+
+	return displayErrLocal
 }
 
 // DisplayEvents will read events from channel, and show them on terminal.
@@ -76,18 +96,9 @@ eventLoop:
 			msg := "Analyzing image..."
 			displayErr = printMessageOnStderr(msg)
 		case bus.ScanFinished, bus.ValidateFinishedWithViolations:
-			pres := e.Value().(presenter.Presenter)
-
-			displayErr = printMessageOnStderr("")
-			displayErr = printMessageOnStderr(pres.Title())
-
-			if err := pres.Present(os.Stdout); err != nil {
-				displayErr = fmt.Errorf("failed to show results: %v", err)
-			}
-
-			if pres.Footer() != "" {
-				displayErr = printMessageOnStderr(pres.Footer())
-			}
+			displayErr = displayResults(e)
+		case bus.PrintSBOM:
+			displayErr = displayResults(e)
 		case bus.CatalogerFinished, bus.ReadLayer:
 			fallthrough
 		default:
