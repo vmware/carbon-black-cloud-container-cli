@@ -20,7 +20,7 @@ jobs:
       - name: golangci lint
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.41
+          version: v1.42
           args: --build-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs" --timeout 5m
 
       - name: go test
