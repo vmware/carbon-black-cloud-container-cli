@@ -17,8 +17,8 @@ jobs:
       with:
         go-version: 1.18
 
-    - name: go mod download
-      run: make dep
+ #   - name: go mod download
+ #     run: make dep
 
     - name: golangci lint
       uses: golangci/golangci-lint-action@v2
