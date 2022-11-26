@@ -2,11 +2,19 @@ package image
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
-	"sync"
+	"strings"
 
+	progress "github.com/wagoodman/go-progress"
+
+	containersimage "github.com/containers/image/v5/image"
+	"github.com/containers/image/v5/transports/alltransports"
+	imagetype "github.com/containers/image/v5/types"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vmware/carbon-black-cloud-container-cli/internal"
@@ -14,9 +22,7 @@ import (
 	"github.com/vmware/carbon-black-cloud-container-cli/internal/config"
 	"github.com/vmware/carbon-black-cloud-container-cli/internal/terminalui"
 	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/printtool"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
 	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/layers"
 	"github.com/vmware/carbon-black-cloud-container-cli/pkg/presenter"
 	"github.com/vmware/carbon-black-cloud-container-cli/pkg/scan"
 )
@@ -72,50 +78,42 @@ func handleScan(input string) {
 }
 
 func actualScan(input string, handler *scan.Handler, buildStep, namespace string) (*image.ScannedImage, bool) {
-	var msg string
+	stage := &progress.Stage{Current: "Fetch image id"}
+	prog := &progress.Manual{Total: 1}
+	value := progress.StagedProgressable(&struct {
+		progress.Stager
+		progress.Progressable
+	}{
+		Stager:       stage,
+		Progressable: prog,
+	})
+	bus.Publish(bus.NewEvent(bus.StartScanTryFetchImageID, value, false))
+	defer prog.SetCompleted()
 
-	registryHandler := scan.NewRegistryHandler()
+	operationID := uuid.New().String()
+	logrus.WithField("operation_id", operationID).Info("Starting an operation")
 
-	var generatedBom *scan.Bom
-	var imgLayers []layers.Layer
-	var errBom, errLayers error
-	var wg sync.WaitGroup
-	wg.Add(2)
+	imageID, err := getImageID(input)
+	if imageID != "" && !opts.ForceScan && opts.presenterOption.OutputFormat != "cyclondx" {
+		if err == nil {
+			results, err := handler.GetImagesScanResultsFromBackendByImageID(imageID)
+			if err == nil {
+				return results, false
+			}
+		}
+	}
 
-	go func() {
-		generatedBom, errBom = registryHandler.GenerateSBOM(input, opts.scanOption)
-		wg.Done()
-	}()
+	stage.Current = "Done fetching image id"
 
-	go func() {
-		imgLayers, errLayers = registryHandler.GenerateLayers(input, opts.scanOption)
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	if errBom != nil {
-		bus.Publish(bus.NewErrorEvent(errBom))
+	scanner := scan.NewScanner()
+	generatedBom, imgLayers, hasErr := scanner.ExtractDataFromImage(input, opts.scanOption)
+	if hasErr {
 		return nil, true
 	}
 
-	if generatedBom == nil {
-		msg = fmt.Sprintf("Generated sbom for %s is empty", input)
-		e := cberr.NewError(cberr.SBOMGenerationErr, msg, errBom)
-		bus.Publish(bus.NewErrorEvent(e))
-		logrus.Errorln(e)
+	handler.AttachData(generatedBom, imgLayers, buildStep, namespace, imageID)
 
-		return nil, true
-	}
-
-	if errLayers != nil {
-		// Not directly exposed to customers, so we don't treat this as fatal error yet
-		logrus.WithError(errLayers).Debugln(fmt.Sprintf("failed to calculate layers for image"))
-	}
-
-	handler.AttachData(generatedBom, imgLayers, buildStep, namespace)
-
-	result, err := handler.Scan(opts.scanOption)
+	result, err := handler.Scan(operationID, opts.scanOption)
 	if err != nil {
 		bus.Publish(bus.NewErrorEvent(err))
 		return nil, true
@@ -131,4 +129,60 @@ func actualScan(input string, handler *scan.Handler, buildStep, namespace string
 	}
 
 	return result, false
+}
+
+func getImageID(input string) (string, error) {
+	ctx := context.Background()
+	srcCtx := &imagetype.SystemContext{
+		// if a multi-arch image detected, pull the linux image by default
+		ArchitectureChoice:          "amd64",
+		OSChoice:                    "linux",
+		DockerInsecureSkipTLSVerify: imagetype.OptionalBoolTrue,
+	}
+
+	src, err := parseImageSource(ctx, srcCtx, input)
+	if err != nil {
+		return "", err
+	}
+
+	defer func(src imagetype.ImageSource) {
+		_ = src.Close()
+	}(src)
+
+	img, err := containersimage.FromUnparsedImage(ctx, srcCtx, containersimage.UnparsedInstance(src, nil))
+	if err != nil {
+		return "", err
+	}
+
+	configBlob, err := img.ConfigBlob(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	hash := sha256.Sum256(configBlob)
+
+	configDigest := hex.EncodeToString(hash[:])
+	if configDigest == "" {
+		return "", fmt.Errorf("empty image id")
+	}
+
+	configDigest = "sha256:" + configDigest
+
+	return configDigest, nil
+}
+
+// parseImageSource converts image URL-like string to an ImageSource.
+// The caller must call .Close() on the returned ImageSource.
+func parseImageSource(ctx context.Context, srcCtx *imagetype.SystemContext, name string) (imagetype.ImageSource, error) {
+	transport := alltransports.TransportFromImageName(name)
+	if transport == nil && !strings.Contains(name, ".tar") {
+		name = "docker://" + name
+	}
+
+	ref, err := alltransports.ParseImageName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return ref.NewImageSource(ctx, srcCtx)
 }

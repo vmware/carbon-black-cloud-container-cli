@@ -17,18 +17,23 @@ import (
 	"github.com/vmware/carbon-black-cloud-container-cli/internal/util/httptool"
 	"github.com/vmware/carbon-black-cloud-container-cli/internal/version"
 	"github.com/vmware/carbon-black-cloud-container-cli/pkg/cberr"
-	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
 	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
-	"github.com/wagoodman/go-progress"
+	progress "github.com/wagoodman/go-progress"
 )
 
 const (
-	service = "management/images"
+	service             = "%s/analyzer"
+	healthCheckTemplate = service + "/health"
 
-	healthCheckTemplate = "%s/" + service + "/health"
-	putSBOMTemplate     = "%s/" + service + "/%s"
-	getStatusTemplate   = "%s/" + service + "/%s/status"
-	getVulnTemplate     = "%s/" + service + "/%s/vulnerabilities"
+	imagesRoute     = service + "/images/%s"
+	getVulnTemplate = imagesRoute + "/vulnerabilities"
+
+	operationRoute    = imagesRoute + "/operations/%s"
+	putSBOMTemplate   = operationRoute
+	getStatusTemplate = operationRoute + "/status"
+
+	imageIsRoute        = service + "/image_id/%s"
+	getVulnByIdTemplate = imageIsRoute + "/vulnerabilities"
 )
 
 // Status is the status for the scanning.
@@ -42,30 +47,22 @@ const (
 	FailedStatus   Status = "FAILED"
 )
 
+type StatusResponse struct {
+	OperationStatus Status `json:"operation_status"`
+}
+
 // Handler has all the fields for sending request to scanning service.
 type Handler struct {
 	session      *httptool.RequestSession
 	basePath     string
 	buildStep    string
 	namespace    string
+	imageID      string
 	bom          *Bom
 	layers       []layers.Layer
 	pollPause    time.Duration
 	pollInterval time.Duration
 	pollDuration time.Duration
-}
-
-// analysisPayload is the payload used for uploading sbom to image scanning service.
-type analysisPayload struct {
-	SBOM      *bom.JSONDocument `json:"sbom"`
-	Layers    []layers.Layer    `json:"layers"`
-	BuildStep string            `json:"build_step"`
-	Namespace string            `json:"namespace"`
-	ForceScan bool              `json:"force_scan"`
-	Meta      struct {
-		SyftVersion string `json:"syft_version"`
-		CliVersion  string `json:"cli_version"`
-	} `json:"metadata"`
 }
 
 // NewScanHandler will create a handler for scan cmd.
@@ -89,18 +86,19 @@ func newScanHandler(session *httptool.RequestSession, basePath string, bom *Bom,
 		basePath:     basePath,
 		bom:          bom,
 		layers:       layers,
-		pollPause:    10 * time.Second,
+		pollPause:    3 * time.Second,
 		pollDuration: 600 * time.Second,
 		pollInterval: 5 * time.Second,
 	}
 }
 
 // AttachData will attach sbom, layers & policy to the handler.
-func (h *Handler) AttachData(bom *Bom, layers []layers.Layer, buildStep, namespace string) {
+func (h *Handler) AttachData(bom *Bom, layers []layers.Layer, buildStep, namespace, imageID string) {
 	h.buildStep = buildStep
 	h.namespace = namespace
 	h.bom = bom
 	h.layers = layers
+	h.imageID = imageID
 }
 
 // HealthCheck will check the health of the service backend.
@@ -112,7 +110,7 @@ func (h Handler) HealthCheck() error {
 }
 
 // Scan will send payload to image scanning service and fetch the result back.
-func (h *Handler) Scan(opts Option) (*image.ScannedImage, error) {
+func (h *Handler) Scan(operationID string, opts Option) (*image.ScannedImage, error) {
 	// update scan duration from the options
 	if opts.Timeout > 0 {
 		h.pollDuration = time.Duration(opts.Timeout) * time.Second
@@ -147,12 +145,12 @@ func (h *Handler) Scan(opts Option) (*image.ScannedImage, error) {
 		logrus.Infof("Scanning image, current stage: %v", currentStage)
 		stage.Current = currentStage
 
-		if status, err := h.PutBomAndLayersToAnalysisAPI(opts); err != nil {
+		if status, err := h.PutBomAndLayersToAnalysisAPI(operationID, opts); err != nil {
 			errChan <- err
 			return
 		} else if status == FinishedStatus {
 			// the result should be fetched directly from backend
-			scannedImage, e := h.GetImageVulnerability(h.bom.ManifestDigest)
+			scannedImage, e := h.GetImageVulnerability(h.bom.ManifestDigest, "")
 			if e == nil && scannedImage != nil && scannedImage.ScanStatus == "SCANNED" {
 				currentStage = "fetching result"
 				logrus.Infof("Scanning image, current stage: %v", currentStage)
@@ -170,7 +168,7 @@ func (h *Handler) Scan(opts Option) (*image.ScannedImage, error) {
 		// sleep for a while, since we need some time to analyze
 		time.Sleep(h.pollPause)
 
-		scannedImage, err := h.GetResponseFromScanAPI(h.bom.ManifestDigest)
+		scannedImage, err := h.GetResponseFromScanAPI(h.bom.ManifestDigest, operationID)
 		if err != nil {
 			errChan <- err
 			return
@@ -188,10 +186,6 @@ func (h *Handler) Scan(opts Option) (*image.ScannedImage, error) {
 		case err := <-errChan:
 			return nil, err
 		case <-signalChan:
-			if err := h.SendCancelSignal(h.bom.ManifestDigest); err != nil {
-				logrus.Errorln(err)
-			}
-
 			err := fmt.Errorf("detect ^C signal interruption")
 			logrus.Errorln(err)
 			errChan <- err
@@ -204,29 +198,17 @@ func (h *Handler) Scan(opts Option) (*image.ScannedImage, error) {
 }
 
 // PutBomAndLayersToAnalysisAPI will call the PUT API and upload sbom to image scanning service.
-func (h Handler) PutBomAndLayersToAnalysisAPI(opts Option) (Status, error) {
+func (h Handler) PutBomAndLayersToAnalysisAPI(operationID string, opts Option) (Status, error) {
 	versionInfo := version.GetCurrentVersion()
 
-	payload := &analysisPayload{
-		SBOM:      &h.bom.Packages,
-		Layers:    h.layers,
-		BuildStep: h.buildStep,
-		Namespace: h.namespace,
-		ForceScan: opts.ForceScan,
-		Meta: struct {
-			SyftVersion string `json:"syft_version"`
-			CliVersion  string `json:"cli_version"`
-		}{
-			SyftVersion: versionInfo.SyftVersion,
-			CliVersion:  versionInfo.Version,
-		},
-	}
+	payload := NewAnalysisPayload(&h.bom.Packages, h.layers, h.buildStep, h.namespace, opts.ForceScan, versionInfo.SyftVersion, versionInfo.Version)
 
-	analysisPath := fmt.Sprintf(putSBOMTemplate, h.basePath, h.bom.ManifestDigest)
+	analysisPath := fmt.Sprintf(putSBOMTemplate, h.basePath, h.bom.ManifestDigest, operationID)
 	if h.bom != nil && h.bom.FullTag != "" {
 		statusURLWithQueries, _ := url.Parse(analysisPath)
 		params := url.Values{}
 		params.Add("full_tag", h.bom.FullTag)
+		params.Add("image_id", h.imageID)
 		statusURLWithQueries.RawQuery = params.Encode()
 		analysisPath = statusURLWithQueries.String()
 	}
@@ -245,12 +227,12 @@ func (h Handler) PutBomAndLayersToAnalysisAPI(opts Option) (Status, error) {
 
 // GetResponseFromScanAPI will call the status API from image scanning service periodically,
 // once the status is "FINISHED", it will fetch the real result from vuln API.
-func (h Handler) GetResponseFromScanAPI(digest string) (*image.ScannedImage, error) {
+func (h Handler) GetResponseFromScanAPI(digest, operationID string) (*image.ScannedImage, error) {
 	ticker := time.NewTicker(h.pollInterval)
 	defer ticker.Stop()
 
 	timeout := make(chan bool)
-	statusResult := make(chan Status)
+	statusResult := make(chan StatusResponse)
 
 	go func() {
 		time.Sleep(h.pollDuration)
@@ -260,23 +242,19 @@ func (h Handler) GetResponseFromScanAPI(digest string) (*image.ScannedImage, err
 	for {
 		select {
 		case <-timeout:
-			if err := h.SendCancelSignal(digest); err != nil {
-				logrus.Errorln(err)
-			}
-
 			return nil, cberr.NewError(cberr.TimeoutErr, "Time out during status polling", nil)
 		case <-ticker.C:
 			go func() {
-				if status, err := h.GetImageAnalysisStatus(digest); err == nil {
+				if status, err := h.GetImageAnalysisStatus(digest, operationID); err == nil {
 					statusResult <- status
 				} else {
-					statusResult <- FailedStatus
+					statusResult <- StatusResponse{OperationStatus: FailedStatus}
 				}
 			}()
 		case result := <-statusResult:
-			switch result {
+			switch result.OperationStatus {
 			case FinishedStatus:
-				return h.GetImageVulnerability(digest)
+				return h.GetImageVulnerability(digest, "")
 			case FailedStatus:
 				errMsg := fmt.Sprintf("Failed to scan image [%s]", digest)
 				return nil, cberr.NewError(cberr.TimeoutErr, errMsg, nil)
@@ -290,8 +268,8 @@ func (h Handler) GetResponseFromScanAPI(digest string) (*image.ScannedImage, err
 }
 
 // GetImageAnalysisStatus will fetch the current analysis result of an image.
-func (h Handler) GetImageAnalysisStatus(digest string) (Status, error) {
-	statusPath := fmt.Sprintf(getStatusTemplate, h.basePath, digest)
+func (h Handler) GetImageAnalysisStatus(digest, operationID string) (StatusResponse, error) {
+	statusPath := fmt.Sprintf(getStatusTemplate, h.basePath, digest, operationID)
 	if h.bom != nil && h.bom.FullTag != "" {
 		statusURLWithQueries, _ := url.Parse(statusPath)
 		params := url.Values{}
@@ -300,30 +278,47 @@ func (h Handler) GetImageAnalysisStatus(digest string) (Status, error) {
 		statusPath = statusURLWithQueries.String()
 	}
 
-	_, resp, err := h.session.RequestData(http.MethodGet, statusPath, nil)
+	var response StatusResponse
+	statusCode, resp, err := h.session.RequestData(http.MethodGet, statusPath, nil)
 	if err != nil {
-		// the scanning message might still be in the queue, return QUEUED here
-		if cberr.ErrorCode(err) == cberr.HTTPNotFoundErr {
-			return QueuedStatus, nil
-		}
-
 		if cberr.ErrorCode(err) == cberr.HTTPUnsuccessfulResponseErr {
 			errMsg := fmt.Sprintf("Failed to fetch status for image (%v)", digest)
 			e := cberr.NewError(cberr.ScanFailedErr, errMsg, err)
 			logrus.Errorln(e.Error())
 
-			return "", e
+			return response, e
 		}
 
-		return "", err
+		return response, err
 	}
 
-	return Status(resp), nil
+	// the scanning message might still be in the queue, return QUEUED here
+	if statusCode == http.StatusNoContent {
+		response.OperationStatus = QueuedStatus
+		return response, nil
+	}
+
+	if err := json.Unmarshal(resp, &response); err != nil {
+		errMsg := fmt.Sprintf("Failed to unmarshal scan status for image (%v)", digest)
+		e := cberr.NewError(cberr.ScanFailedErr, errMsg, err)
+		logrus.Errorln(e.Error())
+
+		return response, e
+	}
+
+	return response, nil
 }
 
 // GetImageVulnerability will fetch the vulnerability result via image digest.
-func (h Handler) GetImageVulnerability(digest string) (*image.ScannedImage, error) {
-	vulnPath := fmt.Sprintf(getVulnTemplate, h.basePath, digest)
+func (h Handler) GetImageVulnerability(digest string, imageID string) (*image.ScannedImage, error) {
+	var vulnPath string
+
+	if imageID != "" {
+		vulnPath = fmt.Sprintf(getVulnByIdTemplate, h.basePath, imageID)
+	} else {
+		vulnPath = fmt.Sprintf(getVulnTemplate, h.basePath, digest)
+	}
+
 	if h.bom != nil && h.bom.FullTag != "" {
 		vulnURLWithQueries, _ := url.Parse(vulnPath)
 		params := url.Values{}
@@ -334,8 +329,28 @@ func (h Handler) GetImageVulnerability(digest string) (*image.ScannedImage, erro
 
 	_, resp, err := h.session.RequestData(http.MethodGet, vulnPath, nil)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to fetch scan report for image (%v)", digest)
+		var errMsg string
+		if imageID != "" {
+			errMsg = fmt.Sprintf("Failed to fetch scan report for image id (%v)", imageID)
+		} else {
+			errMsg = fmt.Sprintf("Failed to fetch scan report for image manifest(%v)", digest)
+		}
+
 		e := cberr.NewError(cberr.ScanFailedErr, errMsg, err)
+		logrus.Errorln(e.Error())
+
+		return nil, e
+	}
+
+	if len(resp) == 0 {
+		var errMsg string
+		if imageID != "" {
+			errMsg = fmt.Sprintf("Empty respose for image id (%v)", imageID)
+		} else {
+			errMsg = fmt.Sprintf("Empty respose for image manifest (%v)", digest)
+		}
+
+		e := cberr.NewError(cberr.EmptyResponse, errMsg, err)
 		logrus.Errorln(e.Error())
 
 		return nil, e
@@ -352,29 +367,15 @@ func (h Handler) GetImageVulnerability(digest string) (*image.ScannedImage, erro
 	}
 
 	// Unpacking packages from the sbom, if we want to unpack from backend, remove this line.
-	scannedImage.Packages = h.bom.Packages
+	if h.bom != nil {
+		scannedImage.Packages = h.bom.Packages
+	}
 
 	return &scannedImage, nil
 }
 
-// SendCancelSignal will send a cancel signal to backend, will be called when timeout or manual interruption.
-func (h Handler) SendCancelSignal(digest string) error {
-	logrus.Info("Sending cancel signal to backend")
-
-	statusPath := fmt.Sprintf(getStatusTemplate, h.basePath, digest)
-	if h.bom != nil && h.bom.FullTag != "" {
-		statusURLWithQueries, _ := url.Parse(statusPath)
-		params := url.Values{}
-		params.Add("full_tag", h.bom.FullTag)
-		statusURLWithQueries.RawQuery = params.Encode()
-		statusPath = statusURLWithQueries.String()
-	}
-
-	_, _, err := h.session.RequestData(http.MethodPut, statusPath, struct {
-		ScanStatus string `json:"scan_status"`
-	}{
-		ScanStatus: "NOT_SCANNED",
-	})
-
-	return err
+// GetImagesScanResultsFromBackendByImageID return scan image data if existed.
+func (h Handler) GetImagesScanResultsFromBackendByImageID(imageId string) (*image.ScannedImage, error) {
+	scannedImage, e := h.GetImageVulnerability("", imageId)
+	return scannedImage, e
 }

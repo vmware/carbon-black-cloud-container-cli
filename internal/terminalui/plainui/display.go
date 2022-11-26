@@ -69,6 +69,9 @@ func (d Display) DisplayEvents() {
 eventLoop:
 	for e := range bus.EventChan() {
 		switch e.Type() {
+		case bus.StartScanTryFetchImageID:
+			msg := "Start scan"
+			displayErr = printMessageOnStderr(msg)
 		case bus.NewVersionAvailable:
 			displayErr = printMessageOnStderr(e.Value())
 		case bus.NewMessageDetected, bus.ValidateFinishedSuccessfully:
@@ -80,14 +83,14 @@ eventLoop:
 		case bus.PullDockerImage:
 			msg := "Pulling Docker image..."
 			displayErr = printMessageOnStderr(msg)
-		case bus.CopyImage:
-			msg := "Copying image..."
-			displayErr = printMessageOnStderr(msg)
 		case bus.ReadImage:
 			msg := "Reading image..."
 			displayErr = printMessageOnStderr(msg)
 		case bus.FetchImage:
 			msg := "Fetching image..."
+			displayErr = printMessageOnStderr(msg)
+		case bus.NewCollectLayers:
+			msg := "Collecting layers..."
 			displayErr = printMessageOnStderr(msg)
 		case bus.CatalogerStarted:
 			msg := "Starting cataloger..."
@@ -99,7 +102,9 @@ eventLoop:
 			displayErr = displayResults(e)
 		case bus.PrintSBOM:
 			displayErr = displayResults(e)
-		case bus.CatalogerFinished, bus.ReadLayer:
+		case bus.PrintPayload:
+			displayErr = displayResults(e)
+		case bus.ReadLayer:
 			fallthrough
 		default:
 			continue

@@ -24,6 +24,8 @@ type Option struct {
 	FullTag string
 	// Timeout is the duration (second) for the scan process
 	Timeout int
+
+	DockerInsecureSkipTLSVerify bool
 }
 
 func (o Option) parseAuth() (username string, password string) {
