@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/anchore/stereoscope"
+	"github.com/anchore/syft/syft"
+	partybus "github.com/wagoodman/go-partybus"
 	"io/ioutil"
 	"os"
 
@@ -36,6 +39,7 @@ func init() {
 		initEventChan,
 		initLog,
 		initConfig,
+		initLibraryProxyBuses,
 	)
 }
 
@@ -54,7 +58,7 @@ func addSubCommands() {
 	rootCmd.AddCommand(k8sobject.Cmd())
 }
 
-// initConfig will initialize the debug log, if set by user.
+// initLog will initialize the debug log, if set by user.
 func initLog() {
 	flag := rootCmd.Flag("debug")
 	if !flag.Changed {
@@ -92,6 +96,24 @@ func initEventChan() {
 	bufferSize := 10
 	eventChan := make(chan bus.Event, bufferSize)
 	bus.SetEventChan(eventChan)
+	logrus.Debug("Global event channel configured")
+}
+
+// initLibraryProxyBuses redirects third-party library events to the singleton event channel of this CLI
+// currently redirects syft and stereoscope events
+func initLibraryProxyBuses() {
+	eventBus := partybus.NewBus()
+	subscription := eventBus.Subscribe()
+	go func() {
+		for e := range subscription.Events() {
+			eventType := bus.EventType(e.Type)
+			bus.Publish(bus.NewEvent(eventType, e.Value, false))
+		}
+	}()
+
+	stereoscope.SetBus(eventBus)
+	syft.SetBus(eventBus)
+	logrus.Debug("Service bus proxies configured")
 }
 
 // initConfig will initialize the app config via viper.
@@ -103,6 +125,7 @@ func initConfig() {
 	}
 
 	config.LoadAppConfig()
+	logrus.Debug("Configuration loaded")
 }
 
 func setGlobalCliOptions() {

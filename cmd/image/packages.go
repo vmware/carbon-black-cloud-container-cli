@@ -2,7 +2,6 @@ package image
 
 import (
 	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/vmware/carbon-black-cloud-container-cli/internal"
@@ -41,8 +40,24 @@ func PrintSBOM(input string) {
 	var msg string
 
 	registryHandler := scan.NewRegistryHandler()
+	scanner := scan.NewScanner()
 
-	generatedBom, err := registryHandler.GenerateSBOM(input, opts.scanOption)
+	img, err := registryHandler.LoadImage(input, opts.scanOption)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to pull image for input %s", input)
+		e := cberr.NewError(cberr.ImageLoadErr, msg, err)
+		bus.Publish(bus.NewErrorEvent(e))
+		logrus.Errorln(e)
+		return
+	}
+	defer func() {
+		if err := img.Cleanup(); err != nil {
+			logrus.WithError(err).Errorf("failed to clean up files for image [%s]", input)
+		}
+		scan.Cleanup()
+	}()
+
+	generatedBom, err := scanner.GenerateSBOM(img, input, opts.scanOption)
 	if err != nil {
 		bus.Publish(bus.NewErrorEvent(err))
 	}

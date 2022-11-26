@@ -1,19 +1,10 @@
 package scan
 
 import (
-	"context"
 	"crypto/sha256"
 	"fmt"
-	"path/filepath"
-	"runtime"
-	"strings"
-	"testing"
-
-	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/signature"
-	"github.com/containers/image/v5/transports/alltransports"
-	"github.com/containers/image/v5/types"
 	"github.com/smartystreets/goconvey/convey"
+	"testing"
 )
 
 const (
@@ -30,63 +21,21 @@ var (
 	validFullTag           = fmt.Sprintf("%s/%s/%s:%s", defaultDomain, officialRepoName, repo, defaultTag)
 	digestedFullTag        = fmt.Sprintf("%s/%s/%s%s%v", defaultDomain, officialRepoName, repo, digestStart, digest)
 	anchoreDigestedFullTag = fmt.Sprintf("%s/%s/%s%s%v", defaultDomain, officialRepoName, repo, digestToTag, digest)
+
+	testImageAlpineTar         = "../../test/images/alpine/alpine_3.13.5.tar"
+	testImageLayersAndFilesTar = "../../test/images/files_and_layers/files_and_layers.tar"
 )
 
 func TestGenerateBomOk(t *testing.T) {
-	registryHandler := RegistryHandler{registryImageCopy: mockCopyImage}
+	convey.Convey("BOM generation wil valid input", t, func() {
+		registryHandler := NewRegistryHandler()
+		img, err := registryHandler.LoadImage(testImageAlpineTar, Option{})
+		convey.So(err, convey.ShouldBeNil)
 
-	bom, err := registryHandler.GenerateSBOM("foo:latest", Option{BypassDockerDaemon: true})
-	if err != nil {
-		t.Errorf("failed to generate BOM: %v", err)
-	}
-
-	if bom == nil {
-		t.Error("BOM was unexpectedly nil")
-	}
-}
-
-func TestGenerateBomBadImage(t *testing.T) {
-	registryHandler := RegistryHandler{registryImageCopy: mockCopyImage}
-
-	// Unknown scheme
-	bom, err := registryHandler.GenerateSBOM("foo://latest", Option{})
-	if err == nil {
-		if bom == nil {
-			t.Error("Missing expected error while parsing SBOM")
-		} else {
-			t.Errorf("Expected error but received SBOM: %v", bom)
-		}
-	}
-
-	// No such file
-	bom, err = registryHandler.GenerateSBOM("/foo/bar/baz", Option{})
-	if err == nil {
-		if bom == nil {
-			t.Error("Missing expected error while parsing SBOM")
-		} else {
-			t.Errorf("Expected error but received SBOM: %v", bom)
-		}
-	}
-
-	// Unable to expand home directory
-	bom, err = registryHandler.GenerateSBOM("~foo", Option{})
-	if err == nil {
-		if bom == nil {
-			t.Error("Missing expected error while parsing SBOM")
-		} else {
-			t.Errorf("Expected error but received SBOM: %v", bom)
-		}
-	}
-
-	// Unknown source
-	bom, err = registryHandler.GenerateSBOM("foo:bar:baz", Option{})
-	if err == nil {
-		if bom == nil {
-			t.Error("Missing expected error while parsing SBOM")
-		} else {
-			t.Errorf("Expected error but received SBOM: %v", bom)
-		}
-	}
+		bom, err := GenerateSBOMFromImage(img, testImageAlpineTar, "")
+		convey.So(err, convey.ShouldBeNil)
+		convey.So(bom, convey.ShouldNotBeNil)
+	})
 }
 
 func TestBomTagFunctions(t *testing.T) {
@@ -191,26 +140,4 @@ func TestBomTagFunctions(t *testing.T) {
 			})
 		})
 	})
-}
-
-func mockCopyImage(
-	ctx context.Context,
-	policyContext *signature.PolicyContext,
-	destRef,
-	srcRef types.ImageReference,
-	options *copy.Options,
-) (copiedManifest []byte, retErr error) {
-	// fetch the test file position and split out the base dir
-	_, testPath, _, _ := runtime.Caller(0) // nolint:dogsled
-	baseDir := strings.Split(testPath, "pkg")[0]
-
-	// get the position of the test tar file
-	testFixture := filepath.Join(baseDir, "test/tarfile/alpine_3.13.5.tar")
-
-	src, err := alltransports.ParseImageName(fmt.Sprintf("docker-archive:%s", testFixture))
-	if err != nil {
-		return nil, err
-	}
-
-	return copy.Image(ctx, policyContext, destRef, src, options)
 }

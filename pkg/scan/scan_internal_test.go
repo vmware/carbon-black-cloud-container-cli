@@ -12,7 +12,10 @@ import (
 	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/image"
 )
 
-var mockDigest = "digest"
+var (
+	mockDigest      = "digest"
+	mockOperationID = "operationID"
+)
 
 func TestNewScanHandler(t *testing.T) {
 	dummyHandler := NewScanHandler("defense-dev01.cbdtest.io/containers", "ABCD123", "FOO", "BAR", nil, nil)
@@ -23,7 +26,7 @@ func TestNewScanHandler(t *testing.T) {
 	}
 
 	fakeBuildStep, fakeNamespace := "fake_build_step", "fake_namespace"
-	dummyHandler.AttachData(nil, nil, fakeBuildStep, fakeNamespace)
+	dummyHandler.AttachData(nil, nil, fakeBuildStep, fakeNamespace, "")
 
 	if dummyHandler.buildStep != fakeBuildStep {
 		t.Errorf("build step didn't attach correctly")
@@ -47,7 +50,7 @@ func TestGetResponsePassNoForce(t *testing.T) {
 		pollInterval: 2 * time.Millisecond,
 	}
 
-	resp, err := mockScanHandler.Scan(Option{ForceScan: false})
+	resp, err := mockScanHandler.Scan(mockOperationID, Option{ForceScan: false})
 	if err != nil {
 		t.Error(err)
 	}
@@ -74,7 +77,7 @@ func TestGetResponsePassWithForce(t *testing.T) {
 		t.Error(err)
 	}
 
-	resp, err := mockScanHandler.Scan(Option{ForceScan: true})
+	resp, err := mockScanHandler.Scan(mockOperationID, Option{ForceScan: true})
 	if err != nil {
 		t.Error(err)
 	}
@@ -96,7 +99,7 @@ func TestGetResponse_Fail(t *testing.T) {
 		pollInterval: 2 * time.Millisecond,
 	}
 
-	resp, err := mockScanHandler.GetResponseFromScanAPI(mockDigest)
+	resp, err := mockScanHandler.GetResponseFromScanAPI(mockDigest, mockOperationID)
 	if err == nil {
 		t.Error("expect an error but got nil")
 	}
@@ -115,7 +118,7 @@ func passedServerMock() *httptest.Server {
 		w.WriteHeader(204)
 	})
 
-	handler.HandleFunc(fmt.Sprintf(getStatusTemplate, "", mockDigest), func(w http.ResponseWriter, r *http.Request) {
+	handler.HandleFunc(fmt.Sprintf(getStatusTemplate, "", mockDigest, mockOperationID), func(w http.ResponseWriter, r *http.Request) {
 		statusCallCnt++
 
 		result := "QUEUED"
@@ -123,10 +126,11 @@ func passedServerMock() *httptest.Server {
 			result = "FINISHED"
 		}
 
-		_, _ = w.Write([]byte(result))
+		b, _ := json.Marshal(StatusResponse{OperationStatus: Status(result)})
+		_, _ = w.Write(b)
 	})
 
-	handler.HandleFunc(fmt.Sprintf(putSBOMTemplate, "", mockDigest), func(w http.ResponseWriter, r *http.Request) {
+	handler.HandleFunc(fmt.Sprintf(putSBOMTemplate, "", mockDigest, mockOperationID), func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(204)
 	})
 
@@ -148,8 +152,9 @@ func passedServerMock() *httptest.Server {
 func failedServerMock() *httptest.Server {
 	handler := http.NewServeMux()
 
-	handler.HandleFunc(fmt.Sprintf(getStatusTemplate, "", mockDigest), func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte("QUEUED"))
+	handler.HandleFunc(fmt.Sprintf(getStatusTemplate, "", mockDigest, mockOperationID), func(w http.ResponseWriter, r *http.Request) {
+		b, _ := json.Marshal(StatusResponse{OperationStatus: QueuedStatus})
+		_, _ = w.Write(b)
 	})
 
 	handler.HandleFunc(fmt.Sprintf(getVulnTemplate, "", mockDigest), func(w http.ResponseWriter, r *http.Request) {

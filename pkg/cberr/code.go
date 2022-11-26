@@ -11,6 +11,7 @@ const (
 	HTTPUnsuccessfulResponseErr
 	HTTPNotFoundErr
 	HTTPNotAllowedErr
+	ImageLoadErr
 	SBOMGenerationErr
 	LayersGenerationErr
 	ScanFailedErr
@@ -18,6 +19,7 @@ const (
 	TimeoutErr
 	DisplayErr
 	PolicyViolationErr
+	EmptyResponse
 )
 
 //nolint:gomnd
@@ -35,6 +37,8 @@ func (c Code) exitCode() int {
 		return 1
 	case HTTPNotAllowedErr:
 		return 1
+	case ImageLoadErr:
+		return 1
 	case SBOMGenerationErr:
 		return 1
 	case LayersGenerationErr:
@@ -48,6 +52,8 @@ func (c Code) exitCode() int {
 	case PolicyViolationErr:
 		return 127
 	case DisplayErr:
+		return 1
+	case EmptyResponse:
 		return 1
 	default:
 		return 0

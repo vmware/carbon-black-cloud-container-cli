@@ -24,31 +24,22 @@ type Bom struct {
 	Packages bom.JSONDocument
 }
 
-// GenerateSBOMFromInput create bom struct after coping.
-func GenerateSBOMFromInput(input, originalInput, forceFullTag string) (*Bom, error) {
-	var exclusions []string
-	sourceInput, err := source.ParseInput(input, "", true)
+// GenerateSBOMFromImage runs the image through syft's catalogers and returns a populated SBOM of the found packages
+func GenerateSBOMFromImage(img *image.Image, originalInput, forceFullTag string) (*Bom, error) {
+	theSource, err := source.NewFromImage(img, originalInput)
 	if err != nil {
-		return nil, err
-	}
-	theSource, cleanup, err := source.New(*sourceInput, &image.RegistryOptions{}, exclusions)
-	if err != nil {
-		errMsg := fmt.Sprintf("Failed to generate source from input %v", input)
+		errMsg := fmt.Sprintf("Failed to create image source from input %v", originalInput)
 
 		e := cberr.NewError(cberr.SBOMGenerationErr, errMsg, err)
 		logrus.Errorln(e.Error())
-
 		return nil, e
 	}
 
-	// clean up sterescope tmp files if needed
-	defer cleanup()
-
 	cft := cataloger.DefaultConfig()
 
-	theCatalog, _, linuxDistro, err := syft.CatalogPackages(theSource, cft)
+	theCatalog, _, linuxDistro, err := syft.CatalogPackages(&theSource, cft)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to catalog input %v", input)
+		errMsg := fmt.Sprintf("Failed to catalog input %v", originalInput)
 
 		e := cberr.NewError(cberr.SBOMGenerationErr, errMsg, err)
 		logrus.Errorln(e.Error())
@@ -58,7 +49,7 @@ func GenerateSBOMFromInput(input, originalInput, forceFullTag string) (*Bom, err
 
 	doc, err := bom.NewJSONDocument(theCatalog, theSource.Metadata, linuxDistro, source.SquashedScope)
 	if err != nil {
-		errMsg := fmt.Sprintf("Failed to parse the sbom for %v", input)
+		errMsg := fmt.Sprintf("Failed to parse the sbom for %v", originalInput)
 		e := cberr.NewError(cberr.SBOMGenerationErr, errMsg, err)
 		logrus.Errorln(e.Error())
 
@@ -113,7 +104,7 @@ func formatTag(tag string) (string, error) {
 	return addDefaultValuesToFullTag(tag)
 }
 
-// formatTags format the attach tags and add opts fullTag if exists.
+// formatTags format the attachment tags and add opts fullTag if exists.
 func formatTags(tags []string, forceFullTag string) []string {
 	if forceFullTag != "" {
 		// the FullTag need to be last

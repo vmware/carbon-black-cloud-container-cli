@@ -33,6 +33,7 @@ func Cmd() *cobra.Command {
 	cmd.AddCommand(ScanCmd())
 	cmd.AddCommand(ValidateCmd())
 	cmd.AddCommand(PackagesCmd())
+	cmd.AddCommand(PayloadCmd())
 
 	cmd.PersistentFlags().StringVarP(
 		&opts.OutputFormat, "output", "o", "table", "output format of the result")

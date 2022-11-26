@@ -87,6 +87,8 @@ func (d Display) DisplayEvents() {
 eventLoop:
 	for e := range bus.EventChan() {
 		switch e.Type() {
+		case bus.StartScanTryFetchImageID:
+			displayErr = handler.StartScanHandler(fr.Append(), e.Value())
 		case bus.NewVersionAvailable:
 			msg := color.Magenta.Sprint(e.Value())
 			displayErr = fr.Append().Render(msg)
@@ -100,12 +102,12 @@ eventLoop:
 			exitCode = e.(*bus.ErrorEvent).ExitCode()
 		case bus.PullDockerImage:
 			displayErr = handler.PullDockerImageHandler(fr.Append(), e.Value())
-		case bus.CopyImage:
-			displayErr = handler.CopyImageHandler(fr.Append(), e.Value())
 		case bus.ReadImage:
 			displayErr = handler.ReadImageHandler(fr.Append(), e.Value())
 		case bus.FetchImage:
 			displayErr = handler.FetchImageHandler(fr.Append(), e.Value())
+		case bus.NewCollectLayers:
+			displayErr = handler.CollectLayersHandler(fr.Append(), e.Value())
 		case bus.CatalogerStarted:
 			displayErr = handler.CatalogerStartedHandler(fr.Append(), e.Value())
 		case bus.ScanStarted:
@@ -116,7 +118,10 @@ eventLoop:
 		case bus.PrintSBOM:
 			errorMsg := "failed to show packages:"
 			displayErr = displayResults(errorMsg, fr, wg, e)
-		case bus.CatalogerFinished, bus.ReadLayer:
+		case bus.PrintPayload:
+			errorMsg := "failed to show payload:"
+			displayErr = displayResults(errorMsg, fr, wg, e)
+		case bus.ReadLayer:
 			fallthrough
 		default:
 			continue
