@@ -17,11 +17,11 @@ jobs:
         with:
           go-version: 1.18
 
-      - name: golangci lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.42
-          args: --build-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs" --timeout 5m
+   #   - name: golangci lint
+   #     uses: golangci/golangci-lint-action@v3
+   #     with:
+   #       version: v1.42
+   #       args: --build-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs" --timeout 5m
 
       - name: go test
         run: make test
