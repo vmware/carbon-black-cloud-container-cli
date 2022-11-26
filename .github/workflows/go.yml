@@ -10,15 +10,21 @@ jobs:
   pre_commit_check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3.1.0
+      - uses: actions/checkout@v3
 
-    - name: set up go
-      uses: actions/setup-go@v3.3.1
-      with:
-        go-version: 1.18
+      - name: set up go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
 
-    - name: Build
-      run: go build -v ./...
+      - name: golangci lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.41
+          args: --build-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs" --timeout 5m
 
-    - name: Test
-      run: go test -v ./...
+      - name: go test
+        run: make test
+
+      - name: go build
+        run: make build
