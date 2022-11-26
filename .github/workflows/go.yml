@@ -24,7 +24,7 @@ jobs:
    #       args: --build-tags="containers_image_openpgp exclude_graphdriver_devicemapper exclude_graphdriver_btrfs" --timeout 5m
 
       - name: go test
-        run:  go test -v ./...
+        run: make test
 
       - name: go build
         run: make build
