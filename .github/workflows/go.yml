@@ -10,10 +10,10 @@ jobs:
   pre_commit_check:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v3.1.0
 
     - name: set up go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@v3.3.1
       with:
         go-version: 1.18
 
