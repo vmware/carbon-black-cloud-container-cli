@@ -3,6 +3,7 @@ package scan
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/bom"
 	"github.com/vmware/carbon-black-cloud-container-cli/pkg/model/layers"
 	"net/http"
 	"net/url"
@@ -145,6 +146,18 @@ func (h *Handler) Scan(operationID string, opts Option) (*image.ScannedImage, er
 		logrus.Infof("Scanning image, current stage: %v", currentStage)
 		stage.Current = currentStage
 
+		target, ok := h.bom.Packages.Source.Target.(bom.JSONImageSource)
+
+		if !ok {
+			errMsg := "Failed to get imageID"
+			e := cberr.NewError(cberr.ScanFailedErr, errMsg, nil)
+			logrus.Error(e.Error())
+
+			return
+		}
+
+		h.imageID = target.ID
+
 		if status, err := h.PutBomAndLayersToAnalysisAPI(operationID, opts); err != nil {
 			errChan <- err
 			return
@@ -254,7 +267,7 @@ func (h Handler) GetResponseFromScanAPI(digest, operationID string) (*image.Scan
 		case result := <-statusResult:
 			switch result.OperationStatus {
 			case FinishedStatus:
-				return h.GetImageVulnerability(digest, "")
+				return h.GetImageVulnerability(digest, h.imageID)
 			case FailedStatus:
 				errMsg := fmt.Sprintf("Failed to scan image [%s]", digest)
 				return nil, cberr.NewError(cberr.TimeoutErr, errMsg, nil)

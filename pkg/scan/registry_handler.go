@@ -106,7 +106,8 @@ func parseSourceFromRawRef(reference string) (image.Source, error) {
 func getImageLoadOptions() []stereoscope.Option {
 	return []stereoscope.Option{
 		stereoscope.WithRegistryOptions(image.RegistryOptions{
-			Platform: "linux/amd64",
+			Platform:        "linux/amd64",
+			InsecureUseHTTP: true,
 		}),
 	}
 }
