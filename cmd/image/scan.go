@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/vmware/carbon-black-cloud-container-cli/internal/version"
 	"strings"
 
 	progress "github.com/wagoodman/go-progress"
@@ -96,7 +97,8 @@ func actualScan(input string, handler *scan.Handler, buildStep, namespace string
 	imageID, err := getImageID(input)
 	if imageID != "" && !opts.ForceScan && opts.presenterOption.OutputFormat != "cyclondx" {
 		if err == nil {
-			results, err := handler.GetImagesScanResultsFromBackendByImageID(imageID)
+			versionInfo := version.GetCurrentVersion()
+			results, err := handler.GetImagesScanResultsFromBackendByImageID(imageID, versionInfo.Version)
 			if err == nil {
 				return results, false
 			}

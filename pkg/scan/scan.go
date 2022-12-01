@@ -33,8 +33,8 @@ const (
 	putSBOMTemplate   = operationRoute
 	getStatusTemplate = operationRoute + "/status"
 
-	imageIsRoute        = service + "/image_id/%s"
-	getVulnByIdTemplate = imageIsRoute + "/vulnerabilities"
+	imageIDRoute        = service + "/image_id/%s"
+	getVulnByIDTemplate = imageIDRoute + "/vulnerabilities"
 )
 
 // Status is the status for the scanning.
@@ -146,24 +146,12 @@ func (h *Handler) Scan(operationID string, opts Option) (*image.ScannedImage, er
 		logrus.Infof("Scanning image, current stage: %v", currentStage)
 		stage.Current = currentStage
 
-		target, ok := h.bom.Packages.Source.Target.(bom.JSONImageSource)
-
-		if !ok {
-			errMsg := "Failed to get imageID"
-			e := cberr.NewError(cberr.ScanFailedErr, errMsg, nil)
-			logrus.Error(e.Error())
-
-			return
-		}
-
-		h.imageID = target.ID
-
 		if status, err := h.PutBomAndLayersToAnalysisAPI(operationID, opts); err != nil {
 			errChan <- err
 			return
 		} else if status == FinishedStatus {
 			// the result should be fetched directly from backend
-			scannedImage, e := h.GetImageVulnerability(h.bom.ManifestDigest, "")
+			scannedImage, e := h.GetImageVulnerability(h.bom.ManifestDigest, "", "")
 			if e == nil && scannedImage != nil && scannedImage.ScanStatus == "SCANNED" {
 				currentStage = "fetching result"
 				logrus.Infof("Scanning image, current stage: %v", currentStage)
@@ -217,6 +205,19 @@ func (h Handler) PutBomAndLayersToAnalysisAPI(operationID string, opts Option) (
 	payload := NewAnalysisPayload(&h.bom.Packages, h.layers, h.buildStep, h.namespace, opts.ForceScan, versionInfo.SyftVersion, versionInfo.Version)
 
 	analysisPath := fmt.Sprintf(putSBOMTemplate, h.basePath, h.bom.ManifestDigest, operationID)
+
+	target, ok := h.bom.Packages.Source.Target.(bom.JSONImageSource)
+
+	if !ok {
+		errMsg := "Failed to get imageID"
+		e := cberr.NewError(cberr.ScanFailedErr, errMsg, nil)
+		logrus.Error(e.Error())
+
+		return "", e
+	}
+
+	h.imageID = target.ID
+
 	if h.bom != nil && h.bom.FullTag != "" {
 		statusURLWithQueries, _ := url.Parse(analysisPath)
 		params := url.Values{}
@@ -267,7 +268,7 @@ func (h Handler) GetResponseFromScanAPI(digest, operationID string) (*image.Scan
 		case result := <-statusResult:
 			switch result.OperationStatus {
 			case FinishedStatus:
-				return h.GetImageVulnerability(digest, h.imageID)
+				return h.GetImageVulnerability(digest, "", "")
 			case FailedStatus:
 				errMsg := fmt.Sprintf("Failed to scan image [%s]", digest)
 				return nil, cberr.NewError(cberr.TimeoutErr, errMsg, nil)
@@ -323,19 +324,33 @@ func (h Handler) GetImageAnalysisStatus(digest, operationID string) (StatusRespo
 }
 
 // GetImageVulnerability will fetch the vulnerability result via image digest.
-func (h Handler) GetImageVulnerability(digest string, imageID string) (*image.ScannedImage, error) {
+func (h Handler) GetImageVulnerability(digest, imageID, cliVersion string) (*image.ScannedImage, error) {
 	var vulnPath string
 
 	if imageID != "" {
-		vulnPath = fmt.Sprintf(getVulnByIdTemplate, h.basePath, imageID)
+		vulnPath = fmt.Sprintf(getVulnByIDTemplate, h.basePath, imageID)
 	} else {
 		vulnPath = fmt.Sprintf(getVulnTemplate, h.basePath, digest)
 	}
 
 	if h.bom != nil && h.bom.FullTag != "" {
-		vulnURLWithQueries, _ := url.Parse(vulnPath)
+		vulnURLWithQueries, err := url.Parse(vulnPath)
+		if err != nil {
+			e := cberr.NewError(cberr.ScanFailedErr, "Bad input", err)
+			return nil, e
+		}
 		params := url.Values{}
 		params.Add("full_tag", h.bom.FullTag)
+		vulnURLWithQueries.RawQuery = params.Encode()
+		vulnPath = vulnURLWithQueries.String()
+	} else if cliVersion != "" {
+		vulnURLWithQueries, err := url.Parse(vulnPath)
+		if err != nil {
+			e := cberr.NewError(cberr.ScanFailedErr, "Bad input", err)
+			return nil, e
+		}
+		params := url.Values{}
+		params.Add("cli_version", cliVersion)
 		vulnURLWithQueries.RawQuery = params.Encode()
 		vulnPath = vulnURLWithQueries.String()
 	}
@@ -388,7 +403,7 @@ func (h Handler) GetImageVulnerability(digest string, imageID string) (*image.Sc
 }
 
 // GetImagesScanResultsFromBackendByImageID return scan image data if existed.
-func (h Handler) GetImagesScanResultsFromBackendByImageID(imageId string) (*image.ScannedImage, error) {
-	scannedImage, e := h.GetImageVulnerability("", imageId)
+func (h Handler) GetImagesScanResultsFromBackendByImageID(imageId, cliVersion string) (*image.ScannedImage, error) {
+	scannedImage, e := h.GetImageVulnerability("", imageId, cliVersion)
 	return scannedImage, e
 }
