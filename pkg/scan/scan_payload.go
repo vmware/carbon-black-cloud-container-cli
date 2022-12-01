@@ -34,7 +34,6 @@ func NewAnalysisPayload(sbom *bom.JSONDocument, layers []layers.Layer, buildStep
 		BuildStep: buildStep,
 		Namespace: namespace,
 		ForceScan: forceScan,
-		//ImageID:   imageID,
 		Meta: struct {
 			SyftVersion string `json:"syft_version"`
 			CliVersion  string `json:"cli_version"`
