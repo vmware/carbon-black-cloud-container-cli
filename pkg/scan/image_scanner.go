@@ -27,7 +27,8 @@ func (s *Scanner) GenerateSBOM(img *image.Image, userInput string, opts Option) 
 // GenerateLayersAndFiles is a wrapper around scan.GenerateLayersAndFileData
 func (s *Scanner) GenerateLayersAndFiles(img *image.Image, _ string, _ Option) ([]layers.Layer, error) {
 	stage := &progress.Stage{Current: "Reading layers from image"}
-	prog := &progress.Manual{Total: 1}
+	prog := &progress.Manual{}
+	prog.SetTotal(1)
 	value := progress.StagedProgressable(&struct {
 		progress.Stager
 		progress.Progressable
