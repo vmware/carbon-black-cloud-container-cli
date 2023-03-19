@@ -80,7 +80,8 @@ func handleScan(input string) {
 
 func actualScan(input string, handler *scan.Handler, buildStep, namespace string) (*image.ScannedImage, bool) {
 	stage := &progress.Stage{Current: "Fetch image id"}
-	prog := &progress.Manual{Total: 1}
+	prog := &progress.Manual{}
+	prog.SetTotal(1)
 	value := progress.StagedProgressable(&struct {
 		progress.Stager
 		progress.Progressable
