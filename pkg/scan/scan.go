@@ -118,7 +118,8 @@ func (h *Handler) Scan(operationID string, opts Option) (*image.ScannedImage, er
 	}
 
 	stage := &progress.Stage{}
-	prog := &progress.Manual{Total: 1}
+	prog := &progress.Manual{}
+	prog.SetTotal(1)
 	value := progress.StagedProgressable(&struct {
 		progress.Stager
 		progress.Progressable
