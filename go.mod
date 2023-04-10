@@ -165,3 +165,4 @@ require (
 	modernc.org/token v1.0.0 // indirect
 )
 
+replace github.com/docker/docker v23.0.1+incompatible => github.com/docker/docker v23.0.3+incompatible
